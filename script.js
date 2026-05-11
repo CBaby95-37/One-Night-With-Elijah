@@ -79,18 +79,18 @@ const fabricMat = new THREE.MeshStandardMaterial({ map: createTexture('fabric') 
 const metalMat = new THREE.MeshStandardMaterial({ map: createTexture('metal'), roughness: 0.2, metalness: 0.8 });
 const invisibleMat = new THREE.MeshBasicMaterial({ visible: false });
 
-// ===== CLOCK CANVAS TEXTURE (FIXED TEXT) =====
+// ===== CLOCK CANVAS TEXTURE =====
 const clockCanvas = document.createElement('canvas');
-clockCanvas.width = 256; clockCanvas.height = 128; // Increased resolution
+clockCanvas.width = 256; clockCanvas.height = 128; 
 const clockCtx = clockCanvas.getContext('2d');
 const clockTex = new THREE.CanvasTexture(clockCanvas);
 
 function updateClockDisplay(timeStr) {
     clockCtx.fillStyle = '#111'; clockCtx.fillRect(0,0,256,128);
     clockCtx.fillStyle = '#ff0000'; 
-    clockCtx.font = 'bold 48px Courier New'; // Smaller font relative to bigger canvas
+    clockCtx.font = 'bold 48px Courier New'; 
     clockCtx.textAlign = 'center'; clockCtx.textBaseline = 'middle';
-    clockCtx.fillText(timeStr, 128, 64); // Perfectly centered
+    clockCtx.fillText(timeStr, 128, 64); 
     clockTex.needsUpdate = true;
 }
 updateClockDisplay("12:00 AM");
@@ -124,7 +124,7 @@ const buildFrame = (x, y, z, rotY) => {
     frame.add(tFrame, lFrame, rFrame); frame.position.set(x, y, z); frame.rotation.y = rotY; scene.add(frame);
 }
 buildFrame(-5.25, 2, 0, 0); 
-buildFrame(-2.0, 2, -5.25, Math.PI/2); // Moved closet frame to X=-2.0
+buildFrame(-2.0, 2, -5.25, Math.PI/2); 
 
 // Main Door
 const mainDoorHinge = new THREE.Group(); mainDoorHinge.position.set(-5.25, 2, -1.5); scene.add(mainDoorHinge);
@@ -162,20 +162,56 @@ const cLeft = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.0), wallMat); cLeft
 const cRight = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.0), wallMat); cRight.position.set(-0.25, 3, -7);
 closetGroup.add(cFloor, cCeiling, cBack, cLeft, cRight); scene.add(closetGroup); colliders.push(cBack, cLeft, cRight);
 
-// Detailed Hanging Clothes in Closet
+// ===== DETAILED HANGING CLOTHES & SHELF =====
+const shelf = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.1, 1.5), woodMat);
+shelf.position.set(-2.0, 5.0, -8.0);
+scene.add(shelf);
+
 const clothesRod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 3.4), metalMat);
-clothesRod.rotation.z = Math.PI / 2; clothesRod.position.set(-2.0, 5.2, -7.5);
+clothesRod.rotation.z = Math.PI / 2; 
+clothesRod.position.set(-2.0, 4.7, -7.5);
 scene.add(clothesRod);
 
-const shirtColors = [0x882222, 0x228822, 0x222288, 0x888822, 0x552255];
-for(let i=0; i<5; i++) {
+const clothesData = [
+    { type: 'shirt', color: 0x882222 },
+    { type: 'pants', color: 0x224488 },
+    { type: 'shirt', color: 0x228822 },
+    { type: 'pants', color: 0x111111 },
+    { type: 'shirt', color: 0xdddddd },
+    { type: 'pants', color: 0x886644 },
+    { type: 'shirt', color: 0x222288 },
+    { type: 'pants', color: 0x333333 },
+    { type: 'shirt', color: 0x552255 }
+];
+
+for(let i=0; i<9; i++) {
+    const itemGroup = new THREE.Group();
+    // Center the hook on the rod exactly
+    itemGroup.position.set(-3.4 + (i*0.35), 4.7, -7.5);
+    // Add a slight messy rotation to make it look realistic
+    itemGroup.rotation.y = (Math.random() - 0.5) * 0.15; 
+
+    // Hook (Rotated sideways along Z axis)
     const hook = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.01, 8, 16, Math.PI), metalMat);
-    hook.position.set(-3.2 + (i*0.6), 5.15, -7.5); hook.rotation.z = Math.PI;
-    const hangerBase = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.02, 0.02), metalMat);
-    hangerBase.position.set(-3.2 + (i*0.6), 5.05, -7.5);
-    const shirt = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.2, 0.15), new THREE.MeshStandardMaterial({color: shirtColors[i]}));
-    shirt.position.set(-3.2 + (i*0.6), 4.4, -7.5);
-    scene.add(hook, hangerBase, shirt);
+    hook.position.set(0, -0.05, 0); 
+    hook.rotation.z = Math.PI; 
+    hook.rotation.y = Math.PI / 2;
+    
+    // Hanger Base (Long part across Z axis)
+    const hangerBase = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.4), metalMat);
+    hangerBase.position.set(0, -0.15, 0);
+    
+    let clothing;
+    if (clothesData[i].type === 'shirt') {
+        clothing = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.0, 0.45), new THREE.MeshStandardMaterial({color: clothesData[i].color, roughness: 0.9}));
+        clothing.position.set(0, -0.65, 0); 
+    } else { 
+        clothing = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.35), new THREE.MeshStandardMaterial({color: clothesData[i].color, roughness: 0.9}));
+        clothing.position.set(0, -0.55, 0); 
+    }
+    
+    itemGroup.add(hook, hangerBase, clothing);
+    scene.add(itemGroup);
 }
 
 // ===== FURNITURE =====
@@ -192,7 +228,7 @@ const pillow = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.Mes
 scene.add(bedGroup);
 const bedCollider = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.0, 5.0), invisibleMat); bedCollider.position.set(3.5, 1.0, 2.5); scene.add(bedCollider); colliders.push(bedCollider);
 
-// FIRST DRESSER (South Wall) - Lamp moved West, Clock moved East
+// FIRST DRESSER (South Wall)
 const dresserGroup = new THREE.Group(); dresserGroup.position.set(1, 1.25, 4.5); 
 const dresserBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), woodMat); dresserGroup.add(dresserBody);
 for(let i=0; i<3; i++) {
@@ -202,25 +238,22 @@ for(let i=0; i<3; i++) {
 }
 scene.add(dresserGroup); colliders.push(dresserBody);
 
-// Lamp (Now on West/Left side of dresser)
+// Lamp (West side of dresser)
 const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.5), metalMat); lampBase.position.set(0.4, 2.75, 4.7); scene.add(lampBase);
 const lampShade = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.6), new THREE.MeshStandardMaterial({ color: 0xffffee })); lampShade.position.set(0.4, 3.2, 4.7); scene.add(lampShade);
 
-// DETAILED ALARM CLOCK (Now on East/Right side of dresser)
+// DETAILED ALARM CLOCK (East side of dresser)
 const clockGroup = new THREE.Group();
 clockGroup.position.set(1.6, 2.65, 4.3);
-clockGroup.rotation.y = -Math.PI / 16; // Angled slightly inward
-// Base of Clock
+clockGroup.rotation.y = -Math.PI / 16; 
 const clockBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.3, 0.3), new THREE.MeshStandardMaterial({color: 0x1a1a1a}));
 clockGroup.add(clockBase);
-// Screen face (tilted)
 const screenMat = new THREE.MeshBasicMaterial({map: clockTex});
 const darkMat = new THREE.MeshStandardMaterial({color: 0x050505});
 const clockFace = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.3, 0.05), [darkMat, darkMat, darkMat, darkMat, darkMat, screenMat]);
-clockFace.position.set(0, 0.05, -0.15); // Front is -Z
-clockFace.rotation.x = -Math.PI / 8; // Tilt up to face player
+clockFace.position.set(0, 0.05, -0.15); 
+clockFace.rotation.x = -Math.PI / 8; 
 clockGroup.add(clockFace);
-// Snooze Button
 const snoozeBtn = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.1), metalMat);
 snoozeBtn.position.set(0, 0.17, 0);
 clockGroup.add(snoozeBtn);
@@ -230,7 +263,7 @@ scene.add(clockGroup);
 const tvDresserGroup = new THREE.Group(); tvDresserGroup.position.set(2.5, 1.25, -4.5); 
 const tvDresserBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), woodMat); tvDresserGroup.add(tvDresserBody);
 for(let i=0; i<3; i++) {
-    const drawer = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.7, 0.1), woodMat); drawer.position.set(0, 0.7 - (i*0.8), 0.55); // +Z to face out
+    const drawer = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.7, 0.1), woodMat); drawer.position.set(0, 0.7 - (i*0.8), 0.55); 
     const drawerKnob = new THREE.Mesh(new THREE.SphereGeometry(0.06), metalMat); drawerKnob.position.set(0, 0, 0.05);
     drawer.add(drawerKnob); tvDresserGroup.add(drawer);
 }
@@ -246,7 +279,7 @@ tvStand.position.set(0, 0.15, 0);
 const tvMonitor = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 0.1), new THREE.MeshStandardMaterial({color: 0x111}));
 tvMonitor.position.set(0, 0.7, 0);
 const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 0.02), new THREE.MeshStandardMaterial({color: 0x050508, roughness: 0.1}));
-tvScreen.position.set(0, 0.7, 0.05); // Screen face outward (+Z)
+tvScreen.position.set(0, 0.7, 0.05); 
 tvGroup.add(tvBase, tvStand, tvMonitor, tvScreen);
 scene.add(tvGroup);
 
