@@ -89,9 +89,9 @@ function createTexture(type) {
         grd.addColorStop(0, "#888"); grd.addColorStop(0.5, "#eee"); grd.addColorStop(1, "#555");
         ctx.fillStyle = grd; ctx.fillRect(0,0,512,512);
     } else if (type === 'perfectWhiteWood') {
-        ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,512,512); // Pure white base
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,512,512); 
         for(let i=0; i<300; i++) {
-            ctx.fillStyle = `rgba(0,0,0,${Math.random()*0.03})`; // Extremely faint grain
+            ctx.fillStyle = `rgba(0,0,0,${Math.random()*0.03})`; 
             ctx.fillRect(Math.random()*512, 0, Math.random()*4+1, 512);
         }
     }
@@ -135,7 +135,6 @@ ceiling.rotation.x = Math.PI / 2; ceiling.position.y = 6; scene.add(ceiling);
 const sWall = new THREE.Mesh(new THREE.BoxGeometry(10, 6, 0.5), wallMat);
 sWall.position.set(0, 3, 5.25); scene.add(sWall); colliders.push(sWall);
 
-// East Wall (Window) - FIXED Z-FIGHTING
 const eastWallGroup = new THREE.Group();
 const eWallBottom = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2, 3), wallMat); eWallBottom.position.set(5.25, 1, 0);
 const eWallTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2, 3), wallMat); eWallTop.position.set(5.25, 5, 0);
@@ -148,7 +147,6 @@ const windowGlass = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2, 3), new THREE.M
 windowGlass.position.set(5.25, 3, 0); windowGlass.userData = { type: 'window' };
 scene.add(windowGlass); interactables.push(windowGlass); colliders.push(windowGlass);
 
-// West Wall (Main Door) - FIXED Z-FIGHTING
 const westWallGroup = new THREE.Group();
 const wWallTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.8, 3.4), wallMat); wWallTop.position.set(-5.25, 5.1, 0);
 const wWallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.3), wallMat); wWallLeft.position.set(-5.25, 3, -3.35);
@@ -156,7 +154,6 @@ const wWallRight = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.3), wallMat); 
 westWallGroup.add(wWallTop, wWallLeft, wWallRight); scene.add(westWallGroup);
 colliders.push(wWallLeft, wWallRight);
 
-// Door Frames (Now Perfect White Wood)
 const buildFrame = (x, y, z, rotY) => {
     const frame = new THREE.Group();
     const tFrame = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.2, 3.4), perfectWhiteWoodMat); tFrame.position.set(0, 2.1, 0);
@@ -166,10 +163,9 @@ const buildFrame = (x, y, z, rotY) => {
     frame.position.set(x, y, z); frame.rotation.y = rotY;
     scene.add(frame);
 }
-buildFrame(-5.25, 2, 0, 0); // Main Door Frame
-buildFrame(0, 2, -5.25, Math.PI/2); // Closet Door Frame
+buildFrame(-5.25, 2, 0, 0); 
+buildFrame(0, 2, -5.25, Math.PI/2); 
 
-// Main Door & Knobs
 const door = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 3), woodMat);
 const mKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); mKnob1.position.set(0.15, 0, 1.2);
 const mKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); mKnob2.position.set(-0.15, 0, 1.2);
@@ -184,14 +180,12 @@ const hallFloor = new THREE.Mesh(new THREE.PlaneGeometry(4, 3), woodMat); hallFl
 hallFloor.position.set(-7.5, 0, 0); scene.add(hallFloor);
 const hallBlocker = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 3), invisibleMat); hallBlocker.position.set(-9.5, 5, 0); scene.add(hallBlocker); colliders.push(hallBlocker);
 
-// North Wall & Closet - FIXED Z-FIGHTING
 const northWallGroup = new THREE.Group();
 const nWallLeft = new THREE.Mesh(new THREE.BoxGeometry(3.3, 6, 0.5), wallMat); nWallLeft.position.set(-3.35, 3, -5.25);
 const nWallRight = new THREE.Mesh(new THREE.BoxGeometry(3.3, 6, 0.5), wallMat); nWallRight.position.set(3.35, 3, -5.25);
 const nWallTop = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.8, 0.5), wallMat); nWallTop.position.set(0, 5.1, -5.25);
 northWallGroup.add(nWallLeft, nWallRight, nWallTop); scene.add(northWallGroup); colliders.push(nWallLeft, nWallRight);
 
-// Closet Door & Knobs (Now matches the frame perfectly)
 const closetDoor = new THREE.Mesh(new THREE.BoxGeometry(3, 4, 0.2), perfectWhiteWoodMat);
 const cKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob1.position.set(-1.2, 0, 0.15);
 const cKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob2.position.set(-1.2, 0, -0.15);
@@ -202,7 +196,6 @@ scene.add(closetDoor); interactables.push(closetDoor); colliders.push(closetDoor
 const closetDoorThreshold = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.5), woodMat);
 closetDoorThreshold.rotation.x = -Math.PI / 2; closetDoorThreshold.position.set(0, 0.01, -5.25); scene.add(closetDoorThreshold);
 
-// Closet Interior - FIXED Z-FIGHTING
 const closetGroup = new THREE.Group();
 const cFloor = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), woodMat); cFloor.rotation.x = -Math.PI / 2; cFloor.position.set(0, 0, -7);
 const cCeiling = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), wallMat); cCeiling.rotation.x = Math.PI / 2; cCeiling.position.set(0, 5.99, -7);
@@ -212,9 +205,53 @@ const cRight = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.0), wallMat); cRig
 closetGroup.add(cFloor, cCeiling, cBack, cLeft, cRight); scene.add(closetGroup); colliders.push(cBack, cLeft, cRight);
 
 // ===== FURNITURE =====
-// Bed 
-const bed = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 4), fabricMat); bed.position.set(3.5, 0.5, 3); scene.add(bed); colliders.push(bed);
-const pillow = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 1), new THREE.MeshStandardMaterial({ color: 0xffffff })); pillow.position.set(3.5, 1.25, 4); scene.add(pillow);
+
+// HIGH DETAIL BED
+const bedGroup = new THREE.Group();
+
+// Wooden Frame
+const headboard = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.0, 0.2), woodMat);
+headboard.position.set(3.5, 1.0, 4.9);
+const footboard = new THREE.Mesh(new THREE.BoxGeometry(3.0, 1.0, 0.2), woodMat);
+footboard.position.set(3.5, 0.5, 0.1);
+const rightRail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.6, 4.6), woodMat);
+rightRail.position.set(4.9, 0.5, 2.5);
+const leftRail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.6, 4.6), woodMat);
+leftRail.position.set(2.1, 0.5, 2.5);
+
+bedGroup.add(headboard, footboard, rightRail, leftRail);
+
+// Bed Legs
+const legGeom = new THREE.CylinderGeometry(0.08, 0.04, 0.4);
+const legPositions = [
+    [2.2, 0.2, 4.8], [4.8, 0.2, 4.8], // Back Legs
+    [2.2, 0.2, 0.2], [4.8, 0.2, 0.2]  // Front Legs
+];
+legPositions.forEach(pos => {
+    const leg = new THREE.Mesh(legGeom, woodMat);
+    leg.position.set(...pos);
+    bedGroup.add(leg);
+});
+
+// Mattress 
+const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.5, 4.6), fabricMat);
+mattress.position.set(3.5, 0.65, 2.5);
+bedGroup.add(mattress);
+
+// Fluffy Pillow (Squashed Sphere)
+const pillowGeom = new THREE.SphereGeometry(1, 32, 16);
+const pillow = new THREE.Mesh(pillowGeom, new THREE.MeshStandardMaterial({ color: 0xffffff }));
+pillow.scale.set(1.1, 0.2, 0.4); // Stretches it wide, squashes it flat down
+pillow.position.set(3.5, 0.95, 4.2);
+bedGroup.add(pillow);
+
+scene.add(bedGroup);
+
+// Invisible collider block for the entire bed (Better for game performance)
+const bedCollider = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.0, 5.0), invisibleMat);
+bedCollider.position.set(3.5, 1.0, 2.5);
+scene.add(bedCollider);
+colliders.push(bedCollider);
 
 // Dresser (South wall, facing North)
 const dresserGroup = new THREE.Group();
@@ -222,7 +259,6 @@ dresserGroup.position.set(1, 1.25, 4.5);
 const dresserBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), woodMat);
 dresserGroup.add(dresserBody);
 
-// Individual Drawers
 for(let i=0; i<3; i++) {
     const drawer = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.7, 0.1), woodMat);
     drawer.position.set(0, 0.7 - (i*0.8), -0.55); 
