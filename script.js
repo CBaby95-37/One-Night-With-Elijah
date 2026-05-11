@@ -9,6 +9,10 @@ let doorOpen = false;
 let closetDoorOpen = false;
 let lastTimeString = "";
 
+// Animation Targets
+let mainDoorTargetRot = 0;
+let closetDoorTargetRot = 0;
+
 // UI Elements
 const mainMenu = document.getElementById('main-menu');
 const startBtn = document.getElementById('start-btn');
@@ -166,12 +170,19 @@ const buildFrame = (x, y, z, rotY) => {
 buildFrame(-5.25, 2, 0, 0); 
 buildFrame(0, 2, -5.25, Math.PI/2); 
 
+// ===== MAIN DOOR (SWINGING OUTWARD) =====
+const mainDoorHinge = new THREE.Group();
+mainDoorHinge.position.set(-5.25, 2, -1.5); // Placed at the North edge of the frame
+scene.add(mainDoorHinge);
+
 const door = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 3), woodMat);
 const mKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); mKnob1.position.set(0.15, 0, 1.2);
 const mKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); mKnob2.position.set(-0.15, 0, 1.2);
 door.add(mKnob1, mKnob2);
-door.position.set(-5.25, 2, 0); door.userData = { type: 'main door' };
-scene.add(door); interactables.push(door); colliders.push(door);
+door.position.set(0, 0, 1.5); // Offset so the edge is on the hinge
+door.userData = { type: 'main door' };
+mainDoorHinge.add(door);
+interactables.push(door); colliders.push(door);
 
 const mainDoorThreshold = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 3), woodMat);
 mainDoorThreshold.rotation.x = -Math.PI / 2; mainDoorThreshold.position.set(-5.25, 0.01, 0); scene.add(mainDoorThreshold);
@@ -186,12 +197,20 @@ const nWallRight = new THREE.Mesh(new THREE.BoxGeometry(3.3, 6, 0.5), wallMat); 
 const nWallTop = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.8, 0.5), wallMat); nWallTop.position.set(0, 5.1, -5.25);
 northWallGroup.add(nWallLeft, nWallRight, nWallTop); scene.add(northWallGroup); colliders.push(nWallLeft, nWallRight);
 
+// ===== CLOSET DOOR (SWINGING INWARD) =====
+const closetDoorHinge = new THREE.Group();
+closetDoorHinge.position.set(-1.5, 2, -5.25); // Placed at the West edge of the frame
+scene.add(closetDoorHinge);
+
 const closetDoor = new THREE.Mesh(new THREE.BoxGeometry(3, 4, 0.2), perfectWhiteWoodMat);
-const cKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob1.position.set(-1.2, 0, 0.15);
-const cKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob2.position.set(-1.2, 0, -0.15);
+// Knobs shifted to x=1.2 so they are on the opening side (East side)
+const cKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob1.position.set(1.2, 0, 0.15);
+const cKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob2.position.set(1.2, 0, -0.15);
 closetDoor.add(cKnob1, cKnob2);
-closetDoor.position.set(0, 2, -5.25); closetDoor.userData = { type: 'closet door' };
-scene.add(closetDoor); interactables.push(closetDoor); colliders.push(closetDoor);
+closetDoor.position.set(1.5, 0, 0); // Offset so the edge is on the hinge
+closetDoor.userData = { type: 'closet door' };
+closetDoorHinge.add(closetDoor);
+interactables.push(closetDoor); colliders.push(closetDoor);
 
 const closetDoorThreshold = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.5), woodMat);
 closetDoorThreshold.rotation.x = -Math.PI / 2; closetDoorThreshold.position.set(0, 0.01, -5.25); scene.add(closetDoorThreshold);
@@ -205,11 +224,8 @@ const cRight = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.0), wallMat); cRig
 closetGroup.add(cFloor, cCeiling, cBack, cLeft, cRight); scene.add(closetGroup); colliders.push(cBack, cLeft, cRight);
 
 // ===== FURNITURE =====
-
-// HIGH DETAIL BED
 const bedGroup = new THREE.Group();
 
-// Wooden Frame
 const headboard = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.0, 0.2), woodMat);
 headboard.position.set(3.5, 1.0, 4.9);
 const footboard = new THREE.Mesh(new THREE.BoxGeometry(3.0, 1.0, 0.2), woodMat);
@@ -218,14 +234,12 @@ const rightRail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.6, 4.6), woodMat);
 rightRail.position.set(4.9, 0.5, 2.5);
 const leftRail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.6, 4.6), woodMat);
 leftRail.position.set(2.1, 0.5, 2.5);
-
 bedGroup.add(headboard, footboard, rightRail, leftRail);
 
-// Bed Legs
 const legGeom = new THREE.CylinderGeometry(0.08, 0.04, 0.4);
 const legPositions = [
-    [2.2, 0.2, 4.8], [4.8, 0.2, 4.8], // Back Legs
-    [2.2, 0.2, 0.2], [4.8, 0.2, 0.2]  // Front Legs
+    [2.2, 0.2, 4.8], [4.8, 0.2, 4.8], 
+    [2.2, 0.2, 0.2], [4.8, 0.2, 0.2]  
 ];
 legPositions.forEach(pos => {
     const leg = new THREE.Mesh(legGeom, woodMat);
@@ -233,27 +247,23 @@ legPositions.forEach(pos => {
     bedGroup.add(leg);
 });
 
-// Mattress 
 const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.5, 4.6), fabricMat);
 mattress.position.set(3.5, 0.65, 2.5);
 bedGroup.add(mattress);
 
-// Fluffy Pillow (Squashed Sphere)
 const pillowGeom = new THREE.SphereGeometry(1, 32, 16);
 const pillow = new THREE.Mesh(pillowGeom, new THREE.MeshStandardMaterial({ color: 0xffffff }));
-pillow.scale.set(1.1, 0.2, 0.4); // Stretches it wide, squashes it flat down
+pillow.scale.set(1.1, 0.2, 0.4); 
 pillow.position.set(3.5, 0.95, 4.2);
 bedGroup.add(pillow);
 
 scene.add(bedGroup);
 
-// Invisible collider block for the entire bed (Better for game performance)
 const bedCollider = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.0, 5.0), invisibleMat);
 bedCollider.position.set(3.5, 1.0, 2.5);
 scene.add(bedCollider);
 colliders.push(bedCollider);
 
-// Dresser (South wall, facing North)
 const dresserGroup = new THREE.Group();
 dresserGroup.position.set(1, 1.25, 4.5); 
 const dresserBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), woodMat);
@@ -269,11 +279,9 @@ for(let i=0; i<3; i++) {
 }
 scene.add(dresserGroup); colliders.push(dresserBody);
 
-// Lamp (South side of Dresser)
 const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.5), metalMat); lampBase.position.set(1, 2.75, 4.7); scene.add(lampBase);
 const lampShade = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.6), new THREE.MeshStandardMaterial({ color: 0xffffee })); lampShade.position.set(1, 3.2, 4.7); scene.add(lampShade);
 
-// Alarm Clock (North side of Dresser)
 const clockGeo = new THREE.BoxGeometry(0.6, 0.3, 0.4);
 const blackMat = new THREE.MeshStandardMaterial({color: 0x111111});
 const screenMat = new THREE.MeshBasicMaterial({map: clockTex});
@@ -306,14 +314,19 @@ document.addEventListener('mousedown', () => {
     const intersects = raycaster.intersectObjects(interactables);
     if (intersects.length > 0 && intersects[0].distance < 4) {
         const object = intersects[0].object;
+        
+        // Target Rotations assigned here instead of instantly moving them
         if (object.userData.type === 'main door') {
-            doorOpen = !doorOpen; object.position.z = doorOpen ? -2.5 : 0;
+            doorOpen = !doorOpen; 
+            mainDoorTargetRot = doorOpen ? -Math.PI / 2 : 0; // -90 deg swings outward into the hallway (-X)
             interactionText.innerText = doorOpen ? "*Door Opened*" : "*Door Closed*";
         }
         if (object.userData.type === 'closet door') {
-            closetDoorOpen = !closetDoorOpen; object.position.x = closetDoorOpen ? 2.5 : 0;
+            closetDoorOpen = !closetDoorOpen; 
+            closetDoorTargetRot = closetDoorOpen ? -Math.PI / 2 : 0; // -90 deg swings inward towards bedroom (+Z)
             interactionText.innerText = closetDoorOpen ? "*Closet Opened*" : "*Closet Closed*";
         }
+        
         if (object.userData.type === 'window') interactionText.innerText = "It's pitch black out there... is someone watching?";
         setTimeout(() => interactionText.innerText = "", 2000);
     }
@@ -352,6 +365,10 @@ function animate() {
     if (isPlaying && !gameOver) {
         const delta = clock.getDelta();
         gameTime += delta;
+
+        // Smoothly animate the door hinges toward their target rotations
+        mainDoorHinge.rotation.y = THREE.MathUtils.lerp(mainDoorHinge.rotation.y, mainDoorTargetRot, delta * 5);
+        closetDoorHinge.rotation.y = THREE.MathUtils.lerp(closetDoorHinge.rotation.y, closetDoorTargetRot, delta * 5);
 
         if (gameTime >= 720) {
             trigger6AM();
