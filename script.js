@@ -24,7 +24,7 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 
-// ENABLE SHADOWS
+// ENABLE HIGH-RES SHADOWS
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -408,7 +408,7 @@ snoozeBtn.position.set(0, 0.2, 0);
 clockGroup.add(snoozeBtn);
 scene.add(clockGroup);
 
-// Second Dresser & TV (North Wall, Centered on Right Side)
+// Second Dresser & TV (North Wall)
 const tvDresserGroup = new THREE.Group(); 
 tvDresserGroup.position.set(2.5, 1.25, -4.5); 
 const tvDresserBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), woodMat); 
@@ -467,22 +467,37 @@ const starMesh = new THREE.Points(starsGeom, new THREE.PointsMaterial({ size: 0.
 outsideGroup.add(starMesh);
 scene.add(outsideGroup);
 
-// ===== LIGHTING & SHADOWS =====
-scene.add(new THREE.AmbientLight(0x333333));
+// ===== LIGHTING & SHADOWS (PITCH BLACK UNLIT AREAS) =====
+// Ambient light is REMOVED so anything without direct light goes pure black.
 
+// Moon Light (Faint blue light pointing at the yard so it's not invisible through the window)
+const moonLight = new THREE.DirectionalLight(0x224488, 0.3);
+moonLight.position.set(20, 10, -5);
+moonLight.target.position.set(5, 0, 0);
+scene.add(moonLight);
+scene.add(moonLight.target);
+
+// High-Res Lamp Light
 const lampLight = new THREE.PointLight(0xffaa55, 0.8, 15); 
 lampLight.position.set(0.4, 3.5, 4.7); 
 lampLight.castShadow = true;
-lampLight.shadow.bias = -0.002;
+lampLight.shadow.mapSize.width = 2048; 
+lampLight.shadow.mapSize.height = 2048;
+lampLight.shadow.bias = -0.001; 
+lampLight.shadow.normalBias = 0.02; // Prevents 90-degree corner light leaking
 scene.add(lampLight);
 
+// High-Res Closet Light
 const closetLight = new THREE.PointLight(0x444455, 0.5, 5); 
 closetLight.position.set(-2.0, 5, -7); 
 closetLight.castShadow = true;
-closetLight.shadow.bias = -0.002;
+closetLight.shadow.mapSize.width = 1024;
+closetLight.shadow.mapSize.height = 1024;
+closetLight.shadow.bias = -0.001;
+closetLight.shadow.normalBias = 0.02;
 scene.add(closetLight);
 
-// Enable Shadows on meshes (Fixes light leaking)
+// Apply Shadow Properties to all meshes
 scene.traverse((child) => {
     if (child.isMesh && child.material !== invisibleMat && child.material !== darkMat) {
         if (child.userData.type === 'window') {
