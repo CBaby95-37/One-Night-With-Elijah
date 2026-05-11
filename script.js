@@ -1,12 +1,6 @@
 import * as THREE from 'https://unpkg.com/three@0.126.0/build/three.module.js';
 import { PointerLockControls } from 'https://unpkg.com/three@0.126.0/examples/jsm/controls/PointerLockControls.js';
 
-// ===== MINECRAFT-STYLE LOADING SCREEN =====
-const loaderDiv = document.createElement('div');
-loaderDiv.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;background:#050505;z-index:9999;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;font-family:'Courier New', monospace;";
-loaderDiv.innerHTML = `<h2>Generating World...</h2><div style="width:300px;height:20px;border:2px solid #555;"><div id="load-bar" style="width:0%;height:100%;background:#4a3018;transition: width 0.1s;"></div></div>`;
-document.body.appendChild(loaderDiv);
-
 // Game State
 let isPlaying = false;
 let gameOver = false;
@@ -29,22 +23,20 @@ const sixAmScreen = document.getElementById('six-am-screen');
 const menuText = document.querySelector('#main-menu p');
 if(menuText) menuText.innerText = "W,A,S,D to Move | Left Click to Interact | F or Right Click for Flashlight";
 
-// Scene Setup
+// ===== SCENE & MINECRAFT PBR RENDERER =====
 const scene = new THREE.Scene();
-// MINECRAFT RENDER DISTANCE: Unloads everything past 45 units to guarantee 60 FPS
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 45); 
+scene.background = new THREE.Color(0x020202);
 
-// MINECRAFT DISTANCE FOG: Fades objects into absolute darkness before they unload
-scene.fog = new THREE.Fog(0x000000, 10, 40);
-scene.background = new THREE.Color(0x000000);
+// Render distance optimized to unload chunks outside view
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 80); 
 
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" }); 
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(1.0); 
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); 
 
-// SHADOWS
+// Bedrock PBR Shadow Settings
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFShadowMap; 
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
 document.body.appendChild(renderer.domElement);
 
 // Controls
@@ -73,7 +65,7 @@ const interactables = [];
 const staticColliders = [];
 const dynamicColliders = []; 
 
-// ===== PROCEDURAL TEXTURES =====
+// ===== PROCEDURAL PBR TEXTURES =====
 function createTexture(type) {
     const c = document.createElement('canvas'); c.width = 256; c.height = 256; 
     const ctx = c.getContext('2d');
@@ -96,6 +88,7 @@ function createTexture(type) {
     const tex = new THREE.CanvasTexture(c); tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping; return tex;
 }
 
+// RESTORED PBR MATERIALS
 const wallMat = new THREE.MeshStandardMaterial({ map: createTexture('wall'), roughness: 0.9 });
 const woodMat = new THREE.MeshStandardMaterial({ map: createTexture('wood'), roughness: 0.8 });
 const perfectWhiteWoodMat = new THREE.MeshStandardMaterial({ map: createTexture('perfectWhiteWood'), roughness: 0.8 });
@@ -155,15 +148,15 @@ buildFrame(-5.25, 2, 0, 0); buildFrame(-2.0, 2, -5.25, Math.PI/2);
 // ===== DOORS & HINGES =====
 const mainDoorHinge = new THREE.Group(); mainDoorHinge.position.set(-5.25, 2, -1.5); scene.add(mainDoorHinge);
 const mainDoor = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 3), woodMat);
-const mKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); mKnob1.position.set(0.15, 0, 1.2); mKnob1.userData = { noShadow: true };
-const mKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); mKnob2.position.set(-0.15, 0, 1.2); mKnob2.userData = { noShadow: true };
+const mKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); mKnob1.position.set(0.15, 0, 1.2); 
+const mKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); mKnob2.position.set(-0.15, 0, 1.2); 
 mainDoor.add(mKnob1, mKnob2); mainDoor.position.set(0, 0, 1.5); mainDoor.userData = { type: 'main door' };
 mainDoorHinge.add(mainDoor); interactables.push(mainDoor); dynamicColliders.push(mainDoor);
 
 const closetDoorHinge = new THREE.Group(); closetDoorHinge.position.set(-3.5, 2, -5.25); scene.add(closetDoorHinge);
 const closetDoor = new THREE.Mesh(new THREE.BoxGeometry(3, 4, 0.2), perfectWhiteWoodMat);
-const cKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob1.position.set(1.2, 0, 0.15); cKnob1.userData = { noShadow: true };
-const cKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob2.position.set(1.2, 0, -0.15); cKnob2.userData = { noShadow: true };
+const cKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob1.position.set(1.2, 0, 0.15); 
+const cKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob2.position.set(1.2, 0, -0.15); 
 closetDoor.add(cKnob1, cKnob2); closetDoor.position.set(1.5, 0, 0); closetDoor.userData = { type: 'closet door' };
 closetDoorHinge.add(closetDoor); interactables.push(closetDoor); dynamicColliders.push(closetDoor);
 
@@ -197,8 +190,8 @@ staticColliders.push(hallWallEastNorth, hallWallEastSeg1, hallWallEastSeg2, hall
 const fGeo = new THREE.BoxGeometry(0.2, 4, 3); const fKnob = new THREE.SphereGeometry(0.08);
 const createFakeDoor = () => {
     const fDoor = new THREE.Mesh(fGeo, woodMat);
-    const k1 = new THREE.Mesh(fKnob, metalMat); k1.position.set(0.15, 0, 1.2); k1.userData={noShadow:true};
-    const k2 = new THREE.Mesh(fKnob, metalMat); k2.position.set(-0.15, 0, 1.2); k2.userData={noShadow:true};
+    const k1 = new THREE.Mesh(fKnob, metalMat); k1.position.set(0.15, 0, 1.2); 
+    const k2 = new THREE.Mesh(fKnob, metalMat); k2.position.set(-0.15, 0, 1.2); 
     fDoor.add(k1, k2); return fDoor;
 };
 buildFrame(-9.75, 2, 8, 0); const fakeDoor1 = createFakeDoor(); fakeDoor1.position.set(-9.75, 2, 8); scene.add(fakeDoor1); staticColliders.push(fakeDoor1);
@@ -233,8 +226,8 @@ const clothesData = [
 
 for(let i=0; i<9; i++) {
     const itemGroup = new THREE.Group(); itemGroup.position.set(-3.4 + (i*0.35), 4.7, -7.5); itemGroup.rotation.y = (Math.random() - 0.5) * 0.15; 
-    const hook = new THREE.Mesh(hookGeo, metalMat); hook.position.set(0, -0.05, 0); hook.rotation.z = Math.PI; hook.rotation.y = Math.PI / 2; hook.userData = { noShadow: true };
-    const hangerBase = new THREE.Mesh(hBaseGeo, metalMat); hangerBase.position.set(0, -0.15, 0); hangerBase.userData = { noShadow: true };
+    const hook = new THREE.Mesh(hookGeo, metalMat); hook.position.set(0, -0.05, 0); hook.rotation.z = Math.PI; hook.rotation.y = Math.PI / 2; 
+    const hangerBase = new THREE.Mesh(hBaseGeo, metalMat); hangerBase.position.set(0, -0.15, 0); 
     let clothing = new THREE.Mesh(clothesData[i].type === 'shirt' ? shirtGeo : pantsGeo, new THREE.MeshStandardMaterial({color: clothesData[i].color, roughness: 0.9}));
     clothing.position.set(0, clothesData[i].type === 'shirt' ? -0.65 : -0.55, 0); 
     itemGroup.add(hook, hangerBase, clothing); scene.add(itemGroup);
@@ -265,13 +258,13 @@ const dresserGroup = new THREE.Group(); dresserGroup.position.set(1, 1.25, 4.5);
 const dresserBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), woodMat); dresserGroup.add(dresserBody);
 for(let i=0; i<3; i++) {
     const drawer = new THREE.Mesh(drawerGeom, woodMat); drawer.position.set(0, 0.7 - (i*0.8), -0.55); 
-    const drawerKnob = new THREE.Mesh(fKnobGeo, metalMat); drawerKnob.position.set(0, 0, -0.05); drawerKnob.userData = { noShadow: true };
+    const drawerKnob = new THREE.Mesh(fKnob, metalMat); drawerKnob.position.set(0, 0, -0.05); 
     drawer.add(drawerKnob); dresserGroup.add(drawer);
 }
 scene.add(dresserGroup); staticColliders.push(dresserBody);
 
 const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.5), metalMat); lampBase.position.set(0.4, 2.75, 4.7); scene.add(lampBase);
-const lampShade = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.6), new THREE.MeshStandardMaterial({ color: 0xffffee, roughness: 0.8 })); lampShade.position.set(0.4, 3.2, 4.7); scene.add(lampShade);
+const lampShade = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.6), new THREE.MeshStandardMaterial({ color: 0xffffee })); lampShade.position.set(0.4, 3.2, 4.7); scene.add(lampShade);
 
 const clockGroup = new THREE.Group(); clockGroup.position.set(1.6, 2.6, 4.5); clockGroup.rotation.y = -0.15; 
 const clockBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 0.4), darkMat); clockGroup.add(clockBase);
@@ -285,7 +278,7 @@ const tvDresserGroup = new THREE.Group(); tvDresserGroup.position.set(2.5, 1.25,
 const tvDresserBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), woodMat); tvDresserGroup.add(tvDresserBody);
 for(let i=0; i<3; i++) {
     const drawer = new THREE.Mesh(drawerGeom, woodMat); drawer.position.set(0, 0.7 - (i*0.8), 0.55); 
-    const drawerKnob = new THREE.Mesh(fKnobGeo, metalMat); drawerKnob.position.set(0, 0, 0.05); drawerKnob.userData = { noShadow: true };
+    const drawerKnob = new THREE.Mesh(fKnob, metalMat); drawerKnob.position.set(0, 0, 0.05); 
     drawer.add(drawerKnob); tvDresserGroup.add(drawer);
 }
 scene.add(tvDresserGroup); staticColliders.push(tvDresserBody);
@@ -294,22 +287,25 @@ const tvGroup = new THREE.Group(); tvGroup.position.set(2.5, 2.5, -4.6);
 const tvBase = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.05, 0.4), darkMat); tvBase.position.set(0, 0.025, 0);
 const tvStand = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.2), darkMat); tvStand.position.set(0, 0.15, 0);
 const tvMonitor = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 0.1), darkMat); tvMonitor.position.set(0, 0.7, 0);
-const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 0.02), new THREE.MeshStandardMaterial({color: 0x050508})); tvScreen.position.set(0, 0.7, 0.05); 
+const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 0.02), darkMat); tvScreen.position.set(0, 0.7, 0.05); 
 tvGroup.add(tvBase, tvStand, tvMonitor, tvScreen); scene.add(tvGroup);
 
-// ===== OUTSIDE & STARS (OPTIMIZED) =====
+// ===== OUTSIDE & STARS =====
 const outsideGroup = new THREE.Group();
 const yard = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x0a1c0a })); 
 yard.rotation.x = -Math.PI / 2; yard.position.set(15, -0.1, 20); outsideGroup.add(yard);
 
-const instancedFence = new THREE.InstancedMesh(new THREE.BoxGeometry(0.2, 3, 2), woodMat, 80);
+// INSTANCED MESH FOR FENCE (Massive draw call reduction)
+const fenceGeom = new THREE.BoxGeometry(0.2, 3, 2);
+const instancedFence = new THREE.InstancedMesh(fenceGeom, woodMat, 80);
 const dummy = new THREE.Object3D();
 for(let i=0; i<80; i++) {
-    dummy.position.set(15, 1.5, -60 + (i*2)); dummy.updateMatrix(); instancedFence.setMatrixAt(i, dummy.matrix);
+    dummy.position.set(15, 1.5, -60 + (i*2));
+    dummy.updateMatrix();
+    instancedFence.setMatrixAt(i, dummy.matrix);
 }
 outsideGroup.add(instancedFence);
 
-// Move stars inside the new closer camera clipping plane (radius 40 instead of 80)
 const starsGeom = new THREE.BufferGeometry();
 const starsCount = 400; const starPosArr = new Float32Array(starsCount * 3);
 for(let i=0; i < starsCount; i++) {
@@ -317,62 +313,62 @@ for(let i=0; i < starsCount; i++) {
     starPosArr[i*3] = radius * Math.sin(theta) * Math.cos(phi); starPosArr[i*3+1] = Math.abs(radius * Math.sin(theta) * Math.sin(phi)) + 5; starPosArr[i*3+2] = radius * Math.cos(theta);
 }
 starsGeom.setAttribute('position', new THREE.BufferAttribute(starPosArr, 3));
-// Set fog: false so stars are visible through the darkness!
-outsideGroup.add(new THREE.Points(starsGeom, new THREE.PointsMaterial({ size: 0.15, color: 0xffffff, fog: false })));
+outsideGroup.add(new THREE.Points(starsGeom, new THREE.PointsMaterial({ size: 0.15, color: 0xffffff })));
 scene.add(outsideGroup);
 
-// ===== LIGHTING & PLAYER FLASHLIGHT =====
-const moonLight = new THREE.DirectionalLight(0x224488, 0.3); moonLight.position.set(20, 10, -5); moonLight.target.position.set(5, 0, 0); scene.add(moonLight); scene.add(moonLight.target);
 
-const lampLight = new THREE.PointLight(0xffaa55, 0.8, 9); 
+// ===== MINECRAFT BEDROCK PBR LIGHTING =====
+
+// 1. DIRECTIONAL MOONLIGHT (Minecraft uses Sun/Moon for shadows)
+const moonLight = new THREE.DirectionalLight(0x224488, 0.4); 
+moonLight.position.set(20, 15, 5); 
+moonLight.target.position.set(0, 0, 0); 
+moonLight.castShadow = true;
+// Shadow Camera configuration specifically for the window
+moonLight.shadow.camera.left = -15; moonLight.shadow.camera.right = 15;
+moonLight.shadow.camera.top = 15; moonLight.shadow.camera.bottom = -15;
+moonLight.shadow.mapSize.width = 1024; moonLight.shadow.mapSize.height = 1024;
+moonLight.shadow.bias = -0.001;
+scene.add(moonLight); 
+scene.add(moonLight.target);
+
+// 2. POINT LIGHTS (No Shadows = No Lag. Minecraft Torches don't cast shadows!)
+const lampLight = new THREE.PointLight(0xffaa55, 0.8, 12); 
 lampLight.position.set(0.4, 3.5, 4.7); 
-lampLight.castShadow = true;
-lampLight.shadow.mapSize.width = 512; lampLight.shadow.mapSize.height = 512;
-lampLight.shadow.bias = -0.001; lampLight.shadow.normalBias = 0.05; 
+lampLight.castShadow = false; 
 scene.add(lampLight);
 
-const closetLight = new THREE.PointLight(0x444455, 0.5, 4); 
+const closetLight = new THREE.PointLight(0x444455, 0.5, 5); 
 closetLight.position.set(-2.0, 5, -7); 
+closetLight.castShadow = false;
 scene.add(closetLight);
 
+// 3. FLASHLIGHT (SpotLight is highly optimized)
 const flashlight = new THREE.SpotLight(0xfff5e6, 1.2, 40, Math.PI / 5, 0.8, 2);
 flashlight.position.set(0, 0, 0);
 flashlight.target.position.set(0, 0, -1); 
 flashlight.castShadow = true;
 flashlight.shadow.mapSize.width = 512;
 flashlight.shadow.mapSize.height = 512;
-flashlight.shadow.bias = -0.0005; 
-flashlight.shadow.normalBias = 0.02; 
+flashlight.shadow.bias = -0.001; 
 flashlight.visible = flashlightOn;
-
 camera.add(flashlight);
 camera.add(flashlight.target);
 
-// ===== PRE-COMPILATION LOADER (FIXES STARTUP LAG) =====
-let loadProgress = 0;
-const loadInt = setInterval(() => {
-    loadProgress += 10;
-    const bar = document.getElementById('load-bar');
-    if(bar) bar.style.width = loadProgress + '%';
-    if (loadProgress >= 100) {
-        clearInterval(loadInt);
-        renderer.compile(scene, camera); // Forces shaders to compile NOW instead of during gameplay
-        loaderDiv.style.display = 'none';
-    }
-}, 50);
-
-// APPLY SHADOWS & FREEZE MATRICES
+// APPLY SHADOWS & CULLING
 scene.traverse((child) => {
+    // Frustum Culling unloads geometry outside the camera view (Minecraft Chunk style)
+    child.frustumCulled = true; 
+
     if (child.isMesh && child.material !== invisibleMat && child.material !== darkMat && child !== instancedFence) {
-        
-        if (child.userData.noShadow) {
-            child.castShadow = false; child.receiveShadow = false;
-        } else if (child.userData.type === 'window') {
+        if (child.userData.type === 'window') {
             child.receiveShadow = true; 
         } else { 
-            child.castShadow = true; child.receiveShadow = true; 
+            child.castShadow = true; 
+            child.receiveShadow = true; 
         }
         
+        // UNLOAD STATIC MATH (Saves CPU)
         if (!dynamicColliders.includes(child) && child.userData.type !== 'main door' && child.userData.type !== 'closet door') {
             child.matrixAutoUpdate = false;
             child.updateMatrix();
