@@ -188,15 +188,11 @@ for(let i=0; i<9; i++) {
     const itemGroup = new THREE.Group();
     itemGroup.position.set(-3.4 + (i*0.35), 4.7, -7.5);
     itemGroup.rotation.y = (Math.random() - 0.5) * 0.15; 
-
     const hook = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.01, 8, 16, Math.PI), metalMat);
     hook.position.set(0, -0.05, 0); 
-    hook.rotation.z = Math.PI; 
-    hook.rotation.y = Math.PI / 2;
-    
+    hook.rotation.z = Math.PI; hook.rotation.y = Math.PI / 2;
     const hangerBase = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.4), metalMat);
     hangerBase.position.set(0, -0.15, 0);
-    
     let clothing;
     if (clothesData[i].type === 'shirt') {
         clothing = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.0, 0.45), new THREE.MeshStandardMaterial({color: clothesData[i].color, roughness: 0.9}));
@@ -205,7 +201,6 @@ for(let i=0; i<9; i++) {
         clothing = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.35), new THREE.MeshStandardMaterial({color: clothesData[i].color, roughness: 0.9}));
         clothing.position.set(0, -0.55, 0); 
     }
-    
     itemGroup.add(hook, hangerBase, clothing);
     scene.add(itemGroup);
 }
@@ -238,30 +233,27 @@ scene.add(dresserGroup); colliders.push(dresserBody);
 const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.5), metalMat); lampBase.position.set(0.4, 2.75, 4.7); scene.add(lampBase);
 const lampShade = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.6), new THREE.MeshStandardMaterial({ color: 0xffffee })); lampShade.position.set(0.4, 3.2, 4.7); scene.add(lampShade);
 
-// DETAILED ALARM CLOCK (East side of dresser)
+// DETAILED ALARM CLOCK (FIXED CLIPPING)
 const clockGroup = new THREE.Group();
-clockGroup.position.set(1.6, 2.65, 4.3);
+clockGroup.position.set(1.6, 2.65, 4.4); // Moved slightly forward on dresser
 clockGroup.rotation.y = -Math.PI / 16; 
-const clockBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.3, 0.3), new THREE.MeshStandardMaterial({color: 0x1a1a1a}));
+// Main Body
+const clockBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.35, 0.4), new THREE.MeshStandardMaterial({color: 0x1a1a1a}));
 clockGroup.add(clockBase);
-
+// Screen face (offset significantly forward to allow tilt without clipping)
 const screenMat = new THREE.MeshBasicMaterial({map: clockTex});
 const darkMat = new THREE.MeshStandardMaterial({color: 0x050505});
-// Create the screen piece
-const clockFace = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.25, 0.05), [darkMat, darkMat, darkMat, darkMat, darkMat, screenMat]);
-
-// Position slightly forward on the base
-clockFace.position.set(0, 0.02, -0.14); 
-// *** FIXED ROTATION: Positive X tilts the face UP towards the player ***
-clockFace.rotation.x = Math.PI / 8; 
-
+const clockFace = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.3, 0.02), [darkMat, darkMat, darkMat, darkMat, darkMat, screenMat]);
+clockFace.position.set(0, 0.05, -0.21); // Placed just in front of the -0.2 base front
+clockFace.rotation.x = 0.2; // Gentle tilt back (upwards toward eyes)
 clockGroup.add(clockFace);
+// Snooze Button
 const snoozeBtn = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.1), metalMat);
-snoozeBtn.position.set(0, 0.16, 0);
+snoozeBtn.position.set(0, 0.18, 0);
 clockGroup.add(snoozeBtn);
 scene.add(clockGroup);
 
-// SECOND DRESSER & TV (North Wall, Centered on Right Side)
+// SECOND DRESSER & TV (North Wall)
 const tvDresserGroup = new THREE.Group(); tvDresserGroup.position.set(2.5, 1.25, -4.5); 
 const tvDresserBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), woodMat); tvDresserGroup.add(tvDresserBody);
 for(let i=0; i<3; i++) {
@@ -271,17 +263,13 @@ for(let i=0; i<3; i++) {
 }
 scene.add(tvDresserGroup); colliders.push(tvDresserBody);
 
-// Detailed Flat Screen TV
+// Detailed TV
 const tvGroup = new THREE.Group();
 tvGroup.position.set(2.5, 2.5, -4.6);
-const tvBase = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.05, 0.4), new THREE.MeshStandardMaterial({color: 0x111}));
-tvBase.position.set(0, 0.025, 0);
-const tvStand = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.2), new THREE.MeshStandardMaterial({color: 0x222}));
-tvStand.position.set(0, 0.15, 0);
-const tvMonitor = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 0.1), new THREE.MeshStandardMaterial({color: 0x111}));
-tvMonitor.position.set(0, 0.7, 0);
-const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 0.02), new THREE.MeshStandardMaterial({color: 0x050508, roughness: 0.1}));
-tvScreen.position.set(0, 0.7, 0.05); 
+const tvBase = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.05, 0.4), new THREE.MeshStandardMaterial({color: 0x111})); tvBase.position.set(0, 0.025, 0);
+const tvStand = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.2), new THREE.MeshStandardMaterial({color: 0x222})); tvStand.position.set(0, 0.15, 0);
+const tvMonitor = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 0.1), new THREE.MeshStandardMaterial({color: 0x111})); tvMonitor.position.set(0, 0.7, 0);
+const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 0.02), new THREE.MeshStandardMaterial({color: 0x050508, roughness: 0.1})); tvScreen.position.set(0, 0.7, 0.05); 
 tvGroup.add(tvBase, tvStand, tvMonitor, tvScreen);
 scene.add(tvGroup);
 
@@ -310,13 +298,11 @@ document.addEventListener('mousedown', () => {
     if (intersects.length > 0 && intersects[0].distance < 4) {
         const object = intersects[0].object;
         if (object.userData.type === 'main door') {
-            doorOpen = !doorOpen; 
-            mainDoorTargetRot = doorOpen ? -Math.PI / 2 : 0; 
+            doorOpen = !doorOpen; mainDoorTargetRot = doorOpen ? -Math.PI / 2 : 0; 
             interactionText.innerText = doorOpen ? "*Door Opened*" : "*Door Closed*";
         }
         if (object.userData.type === 'closet door') {
-            closetDoorOpen = !closetDoorOpen; 
-            closetDoorTargetRot = closetDoorOpen ? -Math.PI / 2 : 0; 
+            closetDoorOpen = !closetDoorOpen; closetDoorTargetRot = closetDoorOpen ? -Math.PI / 2 : 0; 
             interactionText.innerText = closetDoorOpen ? "*Closet Opened*" : "*Closet Closed*";
         }
         if (object.userData.type === 'window') interactionText.innerText = "It's pitch black out there... is someone watching?";
@@ -349,7 +335,6 @@ function animate() {
     if (isPlaying && !gameOver) {
         const delta = clock.getDelta();
         gameTime += delta;
-
         mainDoorHinge.rotation.y = THREE.MathUtils.lerp(mainDoorHinge.rotation.y, mainDoorTargetRot, delta * 5);
         closetDoorHinge.rotation.y = THREE.MathUtils.lerp(closetDoorHinge.rotation.y, closetDoorTargetRot, delta * 5);
 
@@ -399,8 +384,6 @@ function animate() {
     } else if (!isPlaying && !gameOver) {
         clock.getDelta();
     }
-
     renderer.render(scene, camera);
 }
-
 animate();
