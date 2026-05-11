@@ -25,11 +25,9 @@ if(menuText) menuText.innerText = "W,A,S,D to Move | Left Click to Interact | F 
 
 // Scene Setup
 const scene = new THREE.Scene();
-// OPTIMIZATION: Dropped render distance to 95 (just past the stars)
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 95); 
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" }); 
 renderer.setSize(window.innerWidth, window.innerHeight);
-// OPTIMIZATION: Hard cap pixel ratio to 1.0. Stops 4K/Retina displays from lagging.
 renderer.setPixelRatio(1.0); 
 
 // SHADOWS
@@ -86,13 +84,13 @@ function createTexture(type) {
     const tex = new THREE.CanvasTexture(c); tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping; return tex;
 }
 
-// OPTIMIZATION: Swapped to MeshLambertMaterial & MeshPhongMaterial for massive GPU savings
-const wallMat = new THREE.MeshLambertMaterial({ map: createTexture('wall') });
-const woodMat = new THREE.MeshLambertMaterial({ map: createTexture('wood') });
-const perfectWhiteWoodMat = new THREE.MeshLambertMaterial({ map: createTexture('perfectWhiteWood') });
-const fabricMat = new THREE.MeshLambertMaterial({ map: createTexture('fabric') });
-const metalMat = new THREE.MeshPhongMaterial({ map: createTexture('metal'), shininess: 50 });
-const darkMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+// RESTORED HIGH-QUALITY MATERIALS
+const wallMat = new THREE.MeshStandardMaterial({ map: createTexture('wall'), roughness: 0.9 });
+const woodMat = new THREE.MeshStandardMaterial({ map: createTexture('wood'), roughness: 0.8 });
+const perfectWhiteWoodMat = new THREE.MeshStandardMaterial({ map: createTexture('perfectWhiteWood'), roughness: 0.8 });
+const fabricMat = new THREE.MeshStandardMaterial({ map: createTexture('fabric'), roughness: 1.0 });
+const metalMat = new THREE.MeshStandardMaterial({ map: createTexture('metal'), roughness: 0.2, metalness: 0.8 });
+const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1.0 });
 const invisibleMat = new THREE.MeshBasicMaterial({ visible: false });
 
 // ===== CLOCK CANVAS TEXTURE =====
@@ -119,7 +117,7 @@ const eWallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.5), wallMat); e
 const eWallRight = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.5), wallMat); eWallRight.position.set(5.25, 3, 3.25);
 eastWallGroup.add(eWallBottom, eWallTop, eWallLeft, eWallRight); scene.add(eastWallGroup); staticColliders.push(eWallBottom, eWallLeft, eWallRight);
 
-const windowGlass = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2, 3), new THREE.MeshLambertMaterial({ color: 0x88ccff, transparent: true, opacity: 0.3 }));
+const windowGlass = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2, 3), new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.3 }));
 windowGlass.position.set(5.25, 3, 0); windowGlass.userData = { type: 'window' }; scene.add(windowGlass); interactables.push(windowGlass); staticColliders.push(windowGlass);
 
 const westWallGroup = new THREE.Group();
@@ -146,15 +144,15 @@ buildFrame(-5.25, 2, 0, 0); buildFrame(-2.0, 2, -5.25, Math.PI/2);
 // ===== DOORS & HINGES =====
 const mainDoorHinge = new THREE.Group(); mainDoorHinge.position.set(-5.25, 2, -1.5); scene.add(mainDoorHinge);
 const mainDoor = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 3), woodMat);
-const mKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); mKnob1.position.set(0.15, 0, 1.2); mKnob1.userData = { noShadow: true };
-const mKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); mKnob2.position.set(-0.15, 0, 1.2); mKnob2.userData = { noShadow: true };
+const mKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); mKnob1.position.set(0.15, 0, 1.2); 
+const mKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); mKnob2.position.set(-0.15, 0, 1.2); 
 mainDoor.add(mKnob1, mKnob2); mainDoor.position.set(0, 0, 1.5); mainDoor.userData = { type: 'main door' };
 mainDoorHinge.add(mainDoor); interactables.push(mainDoor); dynamicColliders.push(mainDoor);
 
 const closetDoorHinge = new THREE.Group(); closetDoorHinge.position.set(-3.5, 2, -5.25); scene.add(closetDoorHinge);
 const closetDoor = new THREE.Mesh(new THREE.BoxGeometry(3, 4, 0.2), perfectWhiteWoodMat);
-const cKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob1.position.set(1.2, 0, 0.15); cKnob1.userData = { noShadow: true };
-const cKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob2.position.set(1.2, 0, -0.15); cKnob2.userData = { noShadow: true };
+const cKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob1.position.set(1.2, 0, 0.15); 
+const cKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob2.position.set(1.2, 0, -0.15); 
 closetDoor.add(cKnob1, cKnob2); closetDoor.position.set(1.5, 0, 0); closetDoor.userData = { type: 'closet door' };
 closetDoorHinge.add(closetDoor); interactables.push(closetDoor); dynamicColliders.push(closetDoor);
 
@@ -185,11 +183,12 @@ hallGroup.add(hallFloor, hallCeil, hallWallEastNorth, hallWallEastSeg1, hallWall
 scene.add(hallGroup);
 staticColliders.push(hallWallEastNorth, hallWallEastSeg1, hallWallEastSeg2, hallWallWestSeg1, hallWallWestSeg2, hallWallWestSeg3, hallWallSouth, hallWallNorth);
 
+// Fake Doors 
 const fGeo = new THREE.BoxGeometry(0.2, 4, 3); const fKnob = new THREE.SphereGeometry(0.08);
 const createFakeDoor = () => {
     const fDoor = new THREE.Mesh(fGeo, woodMat);
-    const k1 = new THREE.Mesh(fKnob, metalMat); k1.position.set(0.15, 0, 1.2); k1.userData={noShadow:true};
-    const k2 = new THREE.Mesh(fKnob, metalMat); k2.position.set(-0.15, 0, 1.2); k2.userData={noShadow:true};
+    const k1 = new THREE.Mesh(fKnob, metalMat); k1.position.set(0.15, 0, 1.2); 
+    const k2 = new THREE.Mesh(fKnob, metalMat); k2.position.set(-0.15, 0, 1.2); 
     fDoor.add(k1, k2); return fDoor;
 };
 buildFrame(-9.75, 2, 8, 0); const fakeDoor1 = createFakeDoor(); fakeDoor1.position.set(-9.75, 2, 8); scene.add(fakeDoor1); staticColliders.push(fakeDoor1);
@@ -224,9 +223,9 @@ const clothesData = [
 
 for(let i=0; i<9; i++) {
     const itemGroup = new THREE.Group(); itemGroup.position.set(-3.4 + (i*0.35), 4.7, -7.5); itemGroup.rotation.y = (Math.random() - 0.5) * 0.15; 
-    const hook = new THREE.Mesh(hookGeo, metalMat); hook.position.set(0, -0.05, 0); hook.rotation.z = Math.PI; hook.rotation.y = Math.PI / 2; hook.userData = { noShadow: true };
-    const hangerBase = new THREE.Mesh(hBaseGeo, metalMat); hangerBase.position.set(0, -0.15, 0); hangerBase.userData = { noShadow: true };
-    let clothing = new THREE.Mesh(clothesData[i].type === 'shirt' ? shirtGeo : pantsGeo, new THREE.MeshLambertMaterial({color: clothesData[i].color }));
+    const hook = new THREE.Mesh(hookGeo, metalMat); hook.position.set(0, -0.05, 0); hook.rotation.z = Math.PI; hook.rotation.y = Math.PI / 2;
+    const hangerBase = new THREE.Mesh(hBaseGeo, metalMat); hangerBase.position.set(0, -0.15, 0);
+    let clothing = new THREE.Mesh(clothesData[i].type === 'shirt' ? shirtGeo : pantsGeo, new THREE.MeshStandardMaterial({color: clothesData[i].color, roughness: 0.9}));
     clothing.position.set(0, clothesData[i].type === 'shirt' ? -0.65 : -0.55, 0); 
     itemGroup.add(hook, hangerBase, clothing); scene.add(itemGroup);
 }
@@ -245,7 +244,7 @@ const legGeo = new THREE.CylinderGeometry(0.08, 0.04, 0.4);
 });
 
 const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.5, 4.6), fabricMat); mattress.position.set(3.5, 0.65, 2.5); bedGroup.add(mattress);
-const pillow = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.MeshLambertMaterial({ color: 0xffffff })); pillow.scale.set(1.1, 0.2, 0.4); pillow.position.set(3.5, 0.95, 4.2); bedGroup.add(pillow);
+const pillow = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.MeshStandardMaterial({ color: 0xffffff })); pillow.scale.set(1.1, 0.2, 0.4); pillow.position.set(3.5, 0.95, 4.2); bedGroup.add(pillow);
 
 scene.add(bedGroup);
 const bedCollider = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.0, 5.0), invisibleMat); bedCollider.position.set(3.5, 1.0, 2.5); scene.add(bedCollider); staticColliders.push(bedCollider);
@@ -256,16 +255,16 @@ const dresserGroup = new THREE.Group(); dresserGroup.position.set(1, 1.25, 4.5);
 const dresserBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), woodMat); dresserGroup.add(dresserBody);
 for(let i=0; i<3; i++) {
     const drawer = new THREE.Mesh(drawerGeom, woodMat); drawer.position.set(0, 0.7 - (i*0.8), -0.55); 
-    const drawerKnob = new THREE.Mesh(fKnob, metalMat); drawerKnob.position.set(0, 0, -0.05); drawerKnob.userData = { noShadow: true };
+    const drawerKnob = new THREE.Mesh(fKnob, metalMat); drawerKnob.position.set(0, 0, -0.05); 
     drawer.add(drawerKnob); dresserGroup.add(drawer);
 }
 scene.add(dresserGroup); staticColliders.push(dresserBody);
 
 const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.5), metalMat); lampBase.position.set(0.4, 2.75, 4.7); scene.add(lampBase);
-const lampShade = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.6), new THREE.MeshLambertMaterial({ color: 0xffffee })); lampShade.position.set(0.4, 3.2, 4.7); scene.add(lampShade);
+const lampShade = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.6), new THREE.MeshStandardMaterial({ color: 0xffffee, roughness: 0.8 })); lampShade.position.set(0.4, 3.2, 4.7); scene.add(lampShade);
 
 const clockGroup = new THREE.Group(); clockGroup.position.set(1.6, 2.6, 4.5); clockGroup.rotation.y = -0.15; 
-const clockBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 0.4), darkMat); clockGroup.add(clockBase);
+const clockBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 0.4), new THREE.MeshStandardMaterial({color: 0x1a1a1a})); clockGroup.add(clockBase);
 const screenMat = new THREE.MeshBasicMaterial({map: clockTex});
 const clockFace = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.32, 0.05), [darkMat, darkMat, darkMat, darkMat, darkMat, screenMat]);
 clockFace.position.set(0, 0.05, -0.22); clockFace.rotation.x = 0.3; clockGroup.add(clockFace);
@@ -276,32 +275,26 @@ const tvDresserGroup = new THREE.Group(); tvDresserGroup.position.set(2.5, 1.25,
 const tvDresserBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), woodMat); tvDresserGroup.add(tvDresserBody);
 for(let i=0; i<3; i++) {
     const drawer = new THREE.Mesh(drawerGeom, woodMat); drawer.position.set(0, 0.7 - (i*0.8), 0.55); 
-    const drawerKnob = new THREE.Mesh(fKnob, metalMat); drawerKnob.position.set(0, 0, 0.05); drawerKnob.userData = { noShadow: true };
+    const drawerKnob = new THREE.Mesh(fKnob, metalMat); drawerKnob.position.set(0, 0, 0.05); 
     drawer.add(drawerKnob); tvDresserGroup.add(drawer);
 }
 scene.add(tvDresserGroup); staticColliders.push(tvDresserBody);
 
 const tvGroup = new THREE.Group(); tvGroup.position.set(2.5, 2.5, -4.6);
 const tvBase = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.05, 0.4), darkMat); tvBase.position.set(0, 0.025, 0);
-const tvStand = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.2), darkMat); tvStand.position.set(0, 0.15, 0);
+const tvStand = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.2), new THREE.MeshStandardMaterial({color: 0x222})); tvStand.position.set(0, 0.15, 0);
 const tvMonitor = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 0.1), darkMat); tvMonitor.position.set(0, 0.7, 0);
-const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 0.02), new THREE.MeshLambertMaterial({color: 0x050508})); tvScreen.position.set(0, 0.7, 0.05); 
+const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 0.02), new THREE.MeshStandardMaterial({color: 0x050508, roughness: 0.1})); tvScreen.position.set(0, 0.7, 0.05); 
 tvGroup.add(tvBase, tvStand, tvMonitor, tvScreen); scene.add(tvGroup);
 
 // ===== OUTSIDE & STARS =====
 const outsideGroup = new THREE.Group();
-const yard = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshLambertMaterial({ color: 0x0a1c0a })); 
+const yard = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x0a1c0a })); 
 yard.rotation.x = -Math.PI / 2; yard.position.set(15, -0.1, 20); outsideGroup.add(yard);
 
-// INSTANCED MESH FOR FENCE (Massive draw call reduction)
-const fenceGeom = new THREE.BoxGeometry(0.2, 3, 2);
-const instancedFence = new THREE.InstancedMesh(fenceGeom, woodMat, 80);
+const instancedFence = new THREE.InstancedMesh(new THREE.BoxGeometry(0.2, 3, 2), woodMat, 80);
 const dummy = new THREE.Object3D();
-for(let i=0; i<80; i++) {
-    dummy.position.set(15, 1.5, -60 + (i*2));
-    dummy.updateMatrix();
-    instancedFence.setMatrixAt(i, dummy.matrix);
-}
+for(let i=0; i<80; i++) { dummy.position.set(15, 1.5, -60 + (i*2)); dummy.updateMatrix(); instancedFence.setMatrixAt(i, dummy.matrix); }
 outsideGroup.add(instancedFence);
 
 const starsGeom = new THREE.BufferGeometry();
@@ -317,15 +310,13 @@ scene.add(outsideGroup);
 // ===== LIGHTING & PLAYER FLASHLIGHT =====
 const moonLight = new THREE.DirectionalLight(0x224488, 0.3); moonLight.position.set(20, 10, -5); moonLight.target.position.set(5, 0, 0); scene.add(moonLight); scene.add(moonLight.target);
 
-// OPTIMIZATION: Reduced distance to 9 to physically stop light from leaking into hall, dropped map resolution
 const lampLight = new THREE.PointLight(0xffaa55, 0.8, 9); 
 lampLight.position.set(0.4, 3.5, 4.7); 
 lampLight.castShadow = true;
-lampLight.shadow.mapSize.width = 256; lampLight.shadow.mapSize.height = 256;
+lampLight.shadow.mapSize.width = 512; lampLight.shadow.mapSize.height = 512;
 lampLight.shadow.bias = -0.001; lampLight.shadow.normalBias = 0.05; 
 scene.add(lampLight);
 
-// OPTIMIZATION: Shadows turned off completely inside closet (Huge FPS gain)
 const closetLight = new THREE.PointLight(0x444455, 0.5, 4); 
 closetLight.position.set(-2.0, 5, -7); 
 scene.add(closetLight);
@@ -334,9 +325,10 @@ const flashlight = new THREE.SpotLight(0xfff5e6, 1.2, 40, Math.PI / 5, 0.8, 2);
 flashlight.position.set(0, 0, 0);
 flashlight.target.position.set(0, 0, -1); 
 flashlight.castShadow = true;
-flashlight.shadow.mapSize.width = 512;
-flashlight.shadow.mapSize.height = 512;
-flashlight.shadow.bias = -0.001;
+flashlight.shadow.mapSize.width = 1024;
+flashlight.shadow.mapSize.height = 1024;
+flashlight.shadow.bias = -0.0005; // Perfected for moving flashlight
+flashlight.shadow.normalBias = 0.02; // Prevents blocky shadow acne on walls
 flashlight.visible = flashlightOn;
 
 camera.add(flashlight);
@@ -345,17 +337,9 @@ camera.add(flashlight.target);
 // APPLY SHADOWS & FREEZE MATRICES
 scene.traverse((child) => {
     if (child.isMesh && child.material !== invisibleMat && child.material !== darkMat && child !== instancedFence) {
+        if (child.userData.type === 'window') child.receiveShadow = true; 
+        else { child.castShadow = true; child.receiveShadow = true; }
         
-        // Exclude tiny objects from shadows for FPS
-        if (child.userData.noShadow) {
-            child.castShadow = false; child.receiveShadow = false;
-        } else if (child.userData.type === 'window') {
-            child.receiveShadow = true; 
-        } else { 
-            child.castShadow = true; child.receiveShadow = true; 
-        }
-        
-        // UNLOADS STATIC MATH = HUGE FPS BOOST
         if (!dynamicColliders.includes(child) && child.userData.type !== 'main door' && child.userData.type !== 'closet door') {
             child.matrixAutoUpdate = false;
             child.updateMatrix();
