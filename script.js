@@ -23,6 +23,11 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+
+// ENABLE SHADOWS
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
 document.body.appendChild(renderer.domElement);
 
 // Controls
@@ -218,28 +223,28 @@ hallFloor.rotation.x = -Math.PI / 2; hallFloor.position.set(-7.5, 0.01, 11.5);
 const hallCeil = new THREE.Mesh(new THREE.PlaneGeometry(4, 37), wallMat); 
 hallCeil.rotation.x = Math.PI / 2; hallCeil.position.set(-7.5, 5.99, 11.5);
 
-// EAST WALL (Perfectly mapped so it never overlaps the bedroom wall)
+// EAST WALL
 const hallWallEastNorth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 2), wallMat); 
-hallWallEastNorth.position.set(-5.25, 3, -6); // North of bedroom
+hallWallEastNorth.position.set(-5.25, 3, -6); 
 const hallWallEastSeg1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 9.3), wallMat); 
-hallWallEastSeg1.position.set(-5.25, 3, 9.65); // Between Bedroom and Fake Door 2
+hallWallEastSeg1.position.set(-5.25, 3, 9.65); 
 const hallWallEastSeg2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 12.3), wallMat); 
-hallWallEastSeg2.position.set(-5.25, 3, 23.85); // South of Fake Door 2
+hallWallEastSeg2.position.set(-5.25, 3, 23.85); 
 const hallWallEastTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.8, 3.4), wallMat);
-hallWallEastTop.position.set(-5.25, 5.1, 16); // Above Fake Door 2
+hallWallEastTop.position.set(-5.25, 5.1, 16); 
 
-// WEST WALL (Perfectly mapped to fit Fake Door 1 and LR Opening)
+// WEST WALL
 const hallWallWestSeg1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 13.3), wallMat);
-hallWallWestSeg1.position.set(-9.75, 3, -0.35); // North of Fake Door 1
+hallWallWestSeg1.position.set(-9.75, 3, -0.35); 
 const hallWallWestSeg2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 10.3), wallMat);
-hallWallWestSeg2.position.set(-9.75, 3, 14.85); // Between Fake Door 1 and LR Opening
+hallWallWestSeg2.position.set(-9.75, 3, 14.85); 
 const hallWallWestSeg3 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 6), wallMat);
-hallWallWestSeg3.position.set(-9.75, 3, 27); // South of LR Opening
+hallWallWestSeg3.position.set(-9.75, 3, 27); 
 
 const hallWallWestTop1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.8, 3.4), wallMat);
-hallWallWestTop1.position.set(-9.75, 5.1, 8); // Above fake door 1
+hallWallWestTop1.position.set(-9.75, 5.1, 8); 
 const hallWallWestTop2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, 4), wallMat);
-hallWallWestTop2.position.set(-9.75, 5.5, 22); // Above LR opening
+hallWallWestTop2.position.set(-9.75, 5.5, 22); 
 
 // NORTH & SOUTH END CAPS
 const hallWallSouth = new THREE.Mesh(new THREE.BoxGeometry(5, 6, 0.5), wallMat); 
@@ -403,7 +408,7 @@ snoozeBtn.position.set(0, 0.2, 0);
 clockGroup.add(snoozeBtn);
 scene.add(clockGroup);
 
-// Second Dresser & TV (North Wall)
+// Second Dresser & TV (North Wall, Centered on Right Side)
 const tvDresserGroup = new THREE.Group(); 
 tvDresserGroup.position.set(2.5, 1.25, -4.5); 
 const tvDresserBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), woodMat); 
@@ -462,12 +467,32 @@ const starMesh = new THREE.Points(starsGeom, new THREE.PointsMaterial({ size: 0.
 outsideGroup.add(starMesh);
 scene.add(outsideGroup);
 
-// ===== LIGHTING =====
+// ===== LIGHTING & SHADOWS =====
 scene.add(new THREE.AmbientLight(0x333333));
+
 const lampLight = new THREE.PointLight(0xffaa55, 0.8, 15); 
-lampLight.position.set(0.4, 3.5, 4.7); scene.add(lampLight);
+lampLight.position.set(0.4, 3.5, 4.7); 
+lampLight.castShadow = true;
+lampLight.shadow.bias = -0.002;
+scene.add(lampLight);
+
 const closetLight = new THREE.PointLight(0x444455, 0.5, 5); 
-closetLight.position.set(-2.0, 5, -7); scene.add(closetLight);
+closetLight.position.set(-2.0, 5, -7); 
+closetLight.castShadow = true;
+closetLight.shadow.bias = -0.002;
+scene.add(closetLight);
+
+// Enable Shadows on meshes (Fixes light leaking)
+scene.traverse((child) => {
+    if (child.isMesh && child.material !== invisibleMat && child.material !== darkMat) {
+        if (child.userData.type === 'window') {
+            child.receiveShadow = true; 
+        } else {
+            child.castShadow = true;
+            child.receiveShadow = true;
+        }
+    }
+});
 
 // ===== INTERACTION LOGIC =====
 const raycaster = new THREE.Raycaster(); 
