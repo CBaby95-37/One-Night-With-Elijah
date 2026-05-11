@@ -226,33 +226,33 @@ scene.add(closetDoorThreshold);
 // ===== EXTENDED HALLWAY =====
 const hallGroup = new THREE.Group();
 
-// Extended Floors and Ceilings (now spans far North to South)
-const hallFloor = new THREE.Mesh(new THREE.PlaneGeometry(4, 33.5), woodMat); 
-hallFloor.rotation.x = -Math.PI / 2; hallFloor.position.set(-7.5, 0.01, 1.625);
-const hallCeil = new THREE.Mesh(new THREE.PlaneGeometry(4, 33.5), wallMat); 
-hallCeil.rotation.x = Math.PI / 2; hallCeil.position.set(-7.5, 5.99, 1.625);
+// Extended Floors and Ceilings (Short North, Long South)
+const hallFloor = new THREE.Mesh(new THREE.PlaneGeometry(4, 37), woodMat); 
+hallFloor.rotation.x = -Math.PI / 2; hallFloor.position.set(-7.5, 0.01, 11.5);
+const hallCeil = new THREE.Mesh(new THREE.PlaneGeometry(4, 37), wallMat); 
+hallCeil.rotation.x = Math.PI / 2; hallCeil.position.set(-7.5, 5.99, 11.5);
 
 // East Wall (South of bedroom)
-const hallWallEastSouth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 13), wallMat); 
-hallWallEastSouth.position.set(-5.25, 3, 11.75);
+const hallWallEastSouth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 24.75), wallMat); 
+hallWallEastSouth.position.set(-5.25, 3, 17.625);
 
-// East Wall (North of bedroom)
-const hallWallEastNorth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 9.75), wallMat); 
-hallWallEastNorth.position.set(-5.25, 3, -10.125);
+// East Wall (North of bedroom - much shorter now)
+const hallWallEastNorth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 1.75), wallMat); 
+hallWallEastNorth.position.set(-5.25, 3, -6.125);
 
-// South Wall (Solid end cap)
+// South Wall (Solid end cap far down the hall)
 const hallWallSouth = new THREE.Mesh(new THREE.BoxGeometry(5, 6, 0.5), wallMat); 
-hallWallSouth.position.set(-7.5, 3, 18.25);
+hallWallSouth.position.set(-7.5, 3, 30);
 
-// North Wall (New solid end cap blocking the north side)
+// North Wall (Solid end cap right past the door)
 const hallWallNorth = new THREE.Mesh(new THREE.BoxGeometry(5, 6, 0.5), wallMat); 
-hallWallNorth.position.set(-7.5, 3, -15.25);
+hallWallNorth.position.set(-7.5, 3, -7);
 
 // West Wall (With doorway leading to living room)
-const hallWallWestNorth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 28.25), wallMat);
-hallWallWestNorth.position.set(-9.75, 3, -1.125); // Z spans -15.25 to 13
-const hallWallWestSouth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 1.25), wallMat);
-hallWallWestSouth.position.set(-9.75, 3, 17.625); // Z spans 17 to 18.25
+const hallWallWestNorth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 20), wallMat);
+hallWallWestNorth.position.set(-9.75, 3, 3); // Spans -7 to 13
+const hallWallWestSouth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 13), wallMat);
+hallWallWestSouth.position.set(-9.75, 3, 23.5); // Spans 17 to 30
 const hallWallWestTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, 4), wallMat);
 hallWallWestTop.position.set(-9.75, 5.5, 15); // Above the doorway
 
@@ -272,16 +272,16 @@ const createFakeDoor = () => {
 };
 
 // Fake Door 1 (West Wall, North of Bedroom)
-buildFrame(-9.75, 2, -6, 0); // Adds exact same door frame
+buildFrame(-9.75, 2, -6, 0); 
 const fakeDoor1 = createFakeDoor();
-fakeDoor1.position.set(-9.6, 2, -6); // Pushed slightly forward so it doesn't clip the wall
+fakeDoor1.position.set(-9.6, 2, -6); 
 scene.add(fakeDoor1);
 colliders.push(fakeDoor1);
 
-// Fake Door 2 (East Wall, further down South)
-buildFrame(-5.25, 2, 10, 0);
+// Fake Door 2 (East Wall, much further down South)
+buildFrame(-5.25, 2, 20, 0);
 const fakeDoor2 = createFakeDoor();
-fakeDoor2.position.set(-5.4, 2, 10);
+fakeDoor2.position.set(-5.4, 2, 20);
 scene.add(fakeDoor2);
 colliders.push(fakeDoor2);
 
@@ -291,11 +291,6 @@ lrEntrance.position.set(-9.75, 2.5, 15); scene.add(lrEntrance);
 const lrVoid = new THREE.Mesh(new THREE.BoxGeometry(2, 6, 4.5), darkMat);
 lrVoid.position.set(-11, 3, 15);
 scene.add(lrVoid);
-
-// Invisible Barrier (Prevents player leaving bedroom area)
-const hallBarrier = new THREE.Mesh(new THREE.BoxGeometry(4, 10, 0.5), invisibleMat); 
-hallBarrier.position.set(-7.5, 5, 1.5);
-scene.add(hallBarrier); colliders.push(hallBarrier);
 
 // ===== CLOSET INTERIOR =====
 const closetGroup = new THREE.Group();
@@ -464,7 +459,6 @@ const lampLight = new THREE.PointLight(0xffaa55, 0.8, 15);
 lampLight.position.set(0.4, 3.5, 4.7); scene.add(lampLight);
 const closetLight = new THREE.PointLight(0x444455, 0.5, 5); 
 closetLight.position.set(-2.0, 5, -7); scene.add(closetLight);
-// Note: Hallway light completely removed
 
 // ===== INTERACTION LOGIC =====
 const raycaster = new THREE.Raycaster();
