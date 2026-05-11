@@ -9,52 +9,48 @@ body {
 #main-menu {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background-color: #050505;
-    z-index: 10;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    background-color: #050505; z-index: 10;
 }
 
 #main-menu h1 {
-    font-size: 4rem;
-    color: #a00;
+    font-size: 4rem; color: #a00;
     text-shadow: 2px 2px 5px black;
 }
 
 #start-btn {
-    padding: 15px 30px;
-    font-size: 1.5rem;
-    background-color: #222;
-    color: white;
-    border: 2px solid #555;
-    cursor: pointer;
-    transition: 0.3s;
+    padding: 15px 30px; font-size: 1.5rem;
+    background-color: #222; color: white;
+    border: 2px solid #555; cursor: pointer; transition: 0.3s;
 }
 
-#start-btn:hover {
-    background-color: #444;
-}
+#start-btn:hover { background-color: #444; }
 
 #game-ui {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none;
-    z-index: 5;
+    pointer-events: none; z-index: 5;
 }
 
 #crosshair {
     position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 24px;
-    color: rgba(255, 255, 255, 0.5);
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 24px; color: rgba(255, 255, 255, 0.5);
 }
 
 #interaction-text {
     position: absolute;
     bottom: 10%; width: 100%;
-    text-align: center;
-    font-size: 1.5rem;
+    text-align: center; font-size: 1.5rem;
+    text-shadow: 2px 2px 4px black;
+}
+
+#six-am-screen {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: black; color: white;
+    display: none; justify-content: center; align-items: center;
+    font-size: 8rem; z-index: 20;
+    opacity: 0; transition: opacity 2s ease-in-out;
 }
