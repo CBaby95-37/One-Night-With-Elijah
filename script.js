@@ -138,7 +138,7 @@ const mainDoorThreshold = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 3), woodMa
 const hallFloor = new THREE.Mesh(new THREE.PlaneGeometry(4, 3), woodMat); hallFloor.rotation.x = -Math.PI / 2; hallFloor.position.set(-7.5, 0, 0); scene.add(hallFloor);
 const hallBlocker = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 3), invisibleMat); hallBlocker.position.set(-9.5, 5, 0); scene.add(hallBlocker); colliders.push(hallBlocker);
 
-// ===== NORTH WALL & CLOSET (SHIFTED WEST) =====
+// ===== NORTH WALL & CLOSET =====
 const northWallGroup = new THREE.Group();
 const nWallLeft = new THREE.Mesh(new THREE.BoxGeometry(1.5, 6, 0.5), wallMat); nWallLeft.position.set(-4.5, 3, -5.25);
 const nWallRight = new THREE.Mesh(new THREE.BoxGeometry(5.5, 6, 0.5), wallMat); nWallRight.position.set(2.5, 3, -5.25);
@@ -186,18 +186,14 @@ const clothesData = [
 
 for(let i=0; i<9; i++) {
     const itemGroup = new THREE.Group();
-    // Center the hook on the rod exactly
     itemGroup.position.set(-3.4 + (i*0.35), 4.7, -7.5);
-    // Add a slight messy rotation to make it look realistic
     itemGroup.rotation.y = (Math.random() - 0.5) * 0.15; 
 
-    // Hook (Rotated sideways along Z axis)
     const hook = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.01, 8, 16, Math.PI), metalMat);
     hook.position.set(0, -0.05, 0); 
     hook.rotation.z = Math.PI; 
     hook.rotation.y = Math.PI / 2;
     
-    // Hanger Base (Long part across Z axis)
     const hangerBase = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.4), metalMat);
     hangerBase.position.set(0, -0.15, 0);
     
@@ -248,14 +244,20 @@ clockGroup.position.set(1.6, 2.65, 4.3);
 clockGroup.rotation.y = -Math.PI / 16; 
 const clockBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.3, 0.3), new THREE.MeshStandardMaterial({color: 0x1a1a1a}));
 clockGroup.add(clockBase);
+
 const screenMat = new THREE.MeshBasicMaterial({map: clockTex});
 const darkMat = new THREE.MeshStandardMaterial({color: 0x050505});
-const clockFace = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.3, 0.05), [darkMat, darkMat, darkMat, darkMat, darkMat, screenMat]);
-clockFace.position.set(0, 0.05, -0.15); 
-clockFace.rotation.x = -Math.PI / 8; 
+// Create the screen piece
+const clockFace = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.25, 0.05), [darkMat, darkMat, darkMat, darkMat, darkMat, screenMat]);
+
+// Position slightly forward on the base
+clockFace.position.set(0, 0.02, -0.14); 
+// *** FIXED ROTATION: Positive X tilts the face UP towards the player ***
+clockFace.rotation.x = Math.PI / 8; 
+
 clockGroup.add(clockFace);
 const snoozeBtn = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.1), metalMat);
-snoozeBtn.position.set(0, 0.17, 0);
+snoozeBtn.position.set(0, 0.16, 0);
 clockGroup.add(snoozeBtn);
 scene.add(clockGroup);
 
