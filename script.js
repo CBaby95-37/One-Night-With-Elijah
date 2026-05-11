@@ -219,13 +219,27 @@ hallFloor.rotation.x = -Math.PI / 2; hallFloor.position.set(-7.5, 0.01, 7.5);
 const hallCeil = new THREE.Mesh(new THREE.PlaneGeometry(4, 21), wallMat); 
 hallCeil.rotation.x = Math.PI / 2; hallCeil.position.set(-7.5, 5.99, 7.5);
 
-const hallWallWest = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 21), wallMat); 
-hallWallWest.position.set(-9.75, 3, 7.5);
+// East Wall (South of bedroom)
 const hallWallEast = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 13), wallMat); 
 hallWallEast.position.set(-5.25, 3, 11.5);
-hallGroup.add(hallFloor, hallCeil, hallWallWest, hallWallEast); 
+
+// South Wall (Now solid, closes off the end)
+const hallWallSouth = new THREE.Mesh(new THREE.BoxGeometry(5, 6, 0.5), wallMat); 
+hallWallSouth.position.set(-7.5, 3, 18.25);
+
+// West Wall (With doorway leading to living room)
+const hallWallWestNorth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 16), wallMat);
+hallWallWestNorth.position.set(-9.75, 3, 5); // Z spans -3 to 13
+
+const hallWallWestSouth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 1.25), wallMat);
+hallWallWestSouth.position.set(-9.75, 3, 17.625); // Z spans 17 to 18.25
+
+const hallWallWestTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, 4), wallMat);
+hallWallWestTop.position.set(-9.75, 5.5, 15); // Above the doorway
+
+hallGroup.add(hallFloor, hallCeil, hallWallEast, hallWallSouth, hallWallWestNorth, hallWallWestSouth, hallWallWestTop); 
 scene.add(hallGroup);
-colliders.push(hallWallWest, hallWallEast);
+colliders.push(hallWallEast, hallWallSouth, hallWallWestNorth, hallWallWestSouth);
 
 // Fake Doors in Hallway
 const fakeDoor1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 4, 2), woodMat); 
@@ -233,12 +247,14 @@ fakeDoor1.position.set(-9.5, 2, 4); scene.add(fakeDoor1);
 const fakeDoor2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 4, 2), woodMat); 
 fakeDoor2.position.set(-9.5, 2, 10); scene.add(fakeDoor2);
 
-// Living Room Doorway (South end)
-const lrWallSouth = new THREE.Mesh(new THREE.BoxGeometry(4, 6, 0.5), wallMat); 
-lrWallSouth.position.set(-7.5, 3, 18.25); scene.add(lrWallSouth); colliders.push(lrWallSouth);
+// Living Room Doorway (West side of the hallway end)
+const lrEntrance = new THREE.Mesh(new THREE.BoxGeometry(0.1, 5, 4), invisibleMat); 
+lrEntrance.position.set(-9.75, 2.5, 15); scene.add(lrEntrance);
 
-const lrEntrance = new THREE.Mesh(new THREE.BoxGeometry(3, 5, 0.1), invisibleMat); 
-lrEntrance.position.set(-7.5, 2.5, 18); scene.add(lrEntrance);
+// Dark void to simulate a pitch-black living room behind the doorway
+const lrVoid = new THREE.Mesh(new THREE.BoxGeometry(2, 6, 4.5), darkMat);
+lrVoid.position.set(-11, 3, 15);
+scene.add(lrVoid);
 
 // Invisible Barrier (Prevents player leaving bedroom area)
 const hallBarrier = new THREE.Mesh(new THREE.BoxGeometry(4, 10, 0.5), invisibleMat); 
