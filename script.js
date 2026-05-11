@@ -86,9 +86,9 @@ const clockCtx = clockCanvas.getContext('2d');
 const clockTex = new THREE.CanvasTexture(clockCanvas);
 
 function updateClockDisplay(timeStr) {
-    clockCtx.fillStyle = '#111'; clockCtx.fillRect(0,0,256,128);
+    clockCtx.fillStyle = '#050505'; clockCtx.fillRect(0,0,256,128);
     clockCtx.fillStyle = '#ff0000'; 
-    clockCtx.font = 'bold 48px Courier New'; 
+    clockCtx.font = 'bold 50px Courier New'; 
     clockCtx.textAlign = 'center'; clockCtx.textBaseline = 'middle';
     clockCtx.fillText(timeStr, 128, 64); 
     clockTex.needsUpdate = true;
@@ -162,47 +162,16 @@ const cLeft = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.0), wallMat); cLeft
 const cRight = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.0), wallMat); cRight.position.set(-0.25, 3, -7);
 closetGroup.add(cFloor, cCeiling, cBack, cLeft, cRight); scene.add(closetGroup); colliders.push(cBack, cLeft, cRight);
 
-// ===== DETAILED HANGING CLOTHES & SHELF =====
-const shelf = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.1, 1.5), woodMat);
-shelf.position.set(-2.0, 5.0, -8.0);
-scene.add(shelf);
+const shelf = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.1, 1.5), woodMat); shelf.position.set(-2.0, 5.0, -8.0); scene.add(shelf);
+const clothesRod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 3.4), metalMat); clothesRod.rotation.z = Math.PI / 2; clothesRod.position.set(-2.0, 4.7, -7.5); scene.add(clothesRod);
 
-const clothesRod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 3.4), metalMat);
-clothesRod.rotation.z = Math.PI / 2; 
-clothesRod.position.set(-2.0, 4.7, -7.5);
-scene.add(clothesRod);
-
-const clothesData = [
-    { type: 'shirt', color: 0x882222 },
-    { type: 'pants', color: 0x224488 },
-    { type: 'shirt', color: 0x228822 },
-    { type: 'pants', color: 0x111111 },
-    { type: 'shirt', color: 0xdddddd },
-    { type: 'pants', color: 0x886644 },
-    { type: 'shirt', color: 0x222288 },
-    { type: 'pants', color: 0x333333 },
-    { type: 'shirt', color: 0x552255 }
-];
-
+const clothesData = [ {type:'shirt',color:0x882222},{type:'pants',color:0x224488},{type:'shirt',color:0x228822},{type:'pants',color:0x111111},{type:'shirt',color:0xdddddd},{type:'pants',color:0x886644},{type:'shirt',color:0x222288},{type:'pants',color:0x333333},{type:'shirt',color:0x552255} ];
 for(let i=0; i<9; i++) {
-    const itemGroup = new THREE.Group();
-    itemGroup.position.set(-3.4 + (i*0.35), 4.7, -7.5);
-    itemGroup.rotation.y = (Math.random() - 0.5) * 0.15; 
-    const hook = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.01, 8, 16, Math.PI), metalMat);
-    hook.position.set(0, -0.05, 0); 
-    hook.rotation.z = Math.PI; hook.rotation.y = Math.PI / 2;
-    const hangerBase = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.4), metalMat);
-    hangerBase.position.set(0, -0.15, 0);
-    let clothing;
-    if (clothesData[i].type === 'shirt') {
-        clothing = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.0, 0.45), new THREE.MeshStandardMaterial({color: clothesData[i].color, roughness: 0.9}));
-        clothing.position.set(0, -0.65, 0); 
-    } else { 
-        clothing = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.35), new THREE.MeshStandardMaterial({color: clothesData[i].color, roughness: 0.9}));
-        clothing.position.set(0, -0.55, 0); 
-    }
-    itemGroup.add(hook, hangerBase, clothing);
-    scene.add(itemGroup);
+    const itemGroup = new THREE.Group(); itemGroup.position.set(-3.4 + (i*0.35), 4.7, -7.5); itemGroup.rotation.y = (Math.random() - 0.5) * 0.15; 
+    const hook = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.01, 8, 16, Math.PI), metalMat); hook.position.set(0,-0.05,0); hook.rotation.z=Math.PI; hook.rotation.y=Math.PI/2;
+    const hangerBase = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.4), metalMat); hangerBase.position.set(0,-0.15,0);
+    let clothing = new THREE.Mesh(new THREE.BoxGeometry(0.12, (clothesData[i].type==='shirt'?1.0:0.8), (clothesData[i].type==='shirt'?0.45:0.35)), new THREE.MeshStandardMaterial({color:clothesData[i].color,roughness:0.9}));
+    clothing.position.set(0,(clothesData[i].type==='shirt'?-0.65:-0.55),0); itemGroup.add(hook, hangerBase, clothing); scene.add(itemGroup);
 }
 
 // ===== FURNITURE =====
@@ -229,27 +198,28 @@ for(let i=0; i<3; i++) {
 }
 scene.add(dresserGroup); colliders.push(dresserBody);
 
-// Lamp (West side of dresser)
+// Lamp 
 const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.5), metalMat); lampBase.position.set(0.4, 2.75, 4.7); scene.add(lampBase);
 const lampShade = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.6), new THREE.MeshStandardMaterial({ color: 0xffffee })); lampShade.position.set(0.4, 3.2, 4.7); scene.add(lampShade);
 
-// DETAILED ALARM CLOCK (FIXED CLIPPING)
+// ===== DETAILED ALARM CLOCK (FIXED CLIPPING) =====
 const clockGroup = new THREE.Group();
-clockGroup.position.set(1.6, 2.65, 4.4); // Moved slightly forward on dresser
-clockGroup.rotation.y = -Math.PI / 16; 
-// Main Body
-const clockBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.35, 0.4), new THREE.MeshStandardMaterial({color: 0x1a1a1a}));
+clockGroup.position.set(1.6, 2.6, 4.5);
+clockGroup.rotation.y = -0.15;
+// Main Body Housing
+const clockBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 0.4), new THREE.MeshStandardMaterial({color: 0x1a1a1a}));
 clockGroup.add(clockBase);
-// Screen face (offset significantly forward to allow tilt without clipping)
+// Slanted Face plate (No clipping)
 const screenMat = new THREE.MeshBasicMaterial({map: clockTex});
 const darkMat = new THREE.MeshStandardMaterial({color: 0x050505});
-const clockFace = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.3, 0.02), [darkMat, darkMat, darkMat, darkMat, darkMat, screenMat]);
-clockFace.position.set(0, 0.05, -0.21); // Placed just in front of the -0.2 base front
-clockFace.rotation.x = 0.2; // Gentle tilt back (upwards toward eyes)
+const clockFace = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.32, 0.05), [darkMat, darkMat, darkMat, darkMat, darkMat, screenMat]);
+// Place screen entirely in front of the body
+clockFace.position.set(0, 0.05, -0.22); 
+clockFace.rotation.x = 0.3; // Tilted back so player can see
 clockGroup.add(clockFace);
 // Snooze Button
-const snoozeBtn = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.1), metalMat);
-snoozeBtn.position.set(0, 0.18, 0);
+const snoozeBtn = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.04, 0.15), metalMat);
+snoozeBtn.position.set(0, 0.2, 0);
 clockGroup.add(snoozeBtn);
 scene.add(clockGroup);
 
@@ -262,31 +232,41 @@ for(let i=0; i<3; i++) {
     drawer.add(drawerKnob); tvDresserGroup.add(drawer);
 }
 scene.add(tvDresserGroup); colliders.push(tvDresserBody);
-
-// Detailed TV
-const tvGroup = new THREE.Group();
-tvGroup.position.set(2.5, 2.5, -4.6);
+const tvGroup = new THREE.Group(); tvGroup.position.set(2.5, 2.5, -4.6);
 const tvBase = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.05, 0.4), new THREE.MeshStandardMaterial({color: 0x111})); tvBase.position.set(0, 0.025, 0);
 const tvStand = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.2), new THREE.MeshStandardMaterial({color: 0x222})); tvStand.position.set(0, 0.15, 0);
 const tvMonitor = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 0.1), new THREE.MeshStandardMaterial({color: 0x111})); tvMonitor.position.set(0, 0.7, 0);
 const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 0.02), new THREE.MeshStandardMaterial({color: 0x050508, roughness: 0.1})); tvScreen.position.set(0, 0.7, 0.05); 
-tvGroup.add(tvBase, tvStand, tvMonitor, tvScreen);
-scene.add(tvGroup);
+tvGroup.add(tvBase, tvStand, tvMonitor, tvScreen); scene.add(tvGroup);
 
 // ===== LIGHTING & ENVIRONMENT =====
 const ambientLight = new THREE.AmbientLight(0x333333); scene.add(ambientLight);
 const lampLight = new THREE.PointLight(0xffaa55, 0.8, 15); lampLight.position.set(0.4, 3.5, 4.7); scene.add(lampLight);
 const closetLight = new THREE.PointLight(0x444455, 0.5, 5); closetLight.position.set(-2.0, 5, -7); scene.add(closetLight);
 
+// ===== STAR SYSTEM (FIXED - NO STARS INSIDE) =====
 const outsideGroup = new THREE.Group();
 const yard = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0x0a1c0a })); yard.rotation.x = -Math.PI / 2; yard.position.set(15, -0.1, 0); outsideGroup.add(yard);
 for(let i=0; i<15; i++) {
     const fencePost = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, 2), woodMat); fencePost.position.set(15, 1.5, -14 + (i*2)); outsideGroup.add(fencePost);
 }
-const starsGeom = new THREE.BufferGeometry(); const posArray = new Float32Array(500 * 3);
-for(let i=0; i<1500; i++) posArray[i] = (Math.random() - 0.5) * 100;
-starsGeom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-const starMesh = new THREE.Points(starsGeom, new THREE.PointsMaterial({ size: 0.1, color: 0xffffff })); starMesh.position.set(20, 10, 0); outsideGroup.add(starMesh);
+// Generate stars as a shell far away (radius 80)
+const starsGeom = new THREE.BufferGeometry();
+const starsCount = 600;
+const starPosArr = new Float32Array(starsCount * 3);
+for(let i=0; i < starsCount; i++) {
+    // Spherical coordinates ensures stars are strictly far away
+    const radius = 80 + Math.random() * 20; 
+    const theta = Math.random() * Math.PI; 
+    const phi = Math.random() * Math.PI * 2; 
+    
+    starPosArr[i*3] = radius * Math.sin(theta) * Math.cos(phi);
+    starPosArr[i*3+1] = Math.abs(radius * Math.sin(theta) * Math.sin(phi)) + 5; // Keep stars in the sky
+    starPosArr[i*3+2] = radius * Math.cos(theta);
+}
+starsGeom.setAttribute('position', new THREE.BufferAttribute(starPosArr, 3));
+const starMesh = new THREE.Points(starsGeom, new THREE.PointsMaterial({ size: 0.2, color: 0xffffff }));
+outsideGroup.add(starMesh);
 scene.add(outsideGroup);
 
 // ===== INTERACTION LOGIC =====
@@ -315,7 +295,7 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// ===== GAME LOOP & TIME SYSTEM =====
+// ===== GAME LOOP =====
 const clock = new THREE.Clock();
 const moveSpeed = 6.0;
 
@@ -331,28 +311,19 @@ function trigger6AM() {
 
 function animate() {
     requestAnimationFrame(animate);
-
     if (isPlaying && !gameOver) {
-        const delta = clock.getDelta();
-        gameTime += delta;
+        const delta = clock.getDelta(); gameTime += delta;
         mainDoorHinge.rotation.y = THREE.MathUtils.lerp(mainDoorHinge.rotation.y, mainDoorTargetRot, delta * 5);
         closetDoorHinge.rotation.y = THREE.MathUtils.lerp(closetDoorHinge.rotation.y, closetDoorTargetRot, delta * 5);
-
         if (gameTime >= 720) {
             trigger6AM();
         } else {
-            const hoursPassed = Math.floor(gameTime / 120);
-            const secondsInCurrentHour = gameTime % 120;
-            let displayHour = 12 + hoursPassed;
-            if (displayHour > 12) displayHour -= 12;
-            const displayMinutes = secondsInCurrentHour < 60 ? ":00" : ":30";
-            const newTimeString = `${displayHour}${displayMinutes} AM`;
-            if (newTimeString !== lastTimeString) {
-                lastTimeString = newTimeString;
-                updateClockDisplay(lastTimeString);
-            }
+            const hrs = Math.floor(gameTime / 120); const secs = gameTime % 120;
+            let dHr = 12 + hrs; if (dHr > 12) dHr -= 12;
+            const dMin = secs < 60 ? ":00" : ":30";
+            const newTS = `${dHr}${dMin} AM`;
+            if (newTS !== lastTimeString) { lastTimeString = newTS; updateClockDisplay(lastTimeString); }
         }
-
         raycaster.setFromCamera(mouse, camera);
         const intersects = raycaster.intersectObjects(interactables);
         if (intersects.length > 0 && intersects[0].distance < 4) {
@@ -360,30 +331,22 @@ function animate() {
         } else if (interactionText.innerText.includes("Click to interact")) {
             interactionText.innerText = "";
         }
-
         let dirZ = Number(move.forward) - Number(move.backward);
         let dirX = Number(move.right) - Number(move.left);
-        if(dirX !== 0 && dirZ !== 0) { const length = Math.sqrt(dirX*dirX + dirZ*dirZ); dirX /= length; dirZ /= length; }
-
+        if(dirX !== 0 && dirZ !== 0) { const length = Math.sqrt(dirX*dirX+dirZ*dirZ); dirX /= length; dirZ /= length; }
         const prevX = camera.position.x; const prevZ = camera.position.z;
         controls.moveForward(dirZ * moveSpeed * delta); controls.moveRight(dirX * moveSpeed * delta);
-        const newX = camera.position.x; const newZ = camera.position.z;
-
         const playerBox = new THREE.Box3();
         const checkCollision = () => {
             playerBox.setFromCenterAndSize(new THREE.Vector3(camera.position.x, 1.5, camera.position.z), new THREE.Vector3(0.8, 3, 0.8));
-            for(let collider of colliders) { if(playerBox.intersectsBox(new THREE.Box3().setFromObject(collider))) return true; }
+            for(let c of colliders) { if(playerBox.intersectsBox(new THREE.Box3().setFromObject(c))) return true; }
             return false;
         };
-
-        camera.position.x = newX; camera.position.z = prevZ;
-        if (checkCollision()) camera.position.x = prevX;
-        camera.position.z = newZ;
-        if (checkCollision()) camera.position.z = prevZ;
+        const newX = camera.position.x; const newZ = camera.position.z;
+        camera.position.x = newX; camera.position.z = prevZ; if (checkCollision()) camera.position.x = prevX;
+        camera.position.z = newZ; if (checkCollision()) camera.position.z = prevZ;
         camera.position.y = 3;
-    } else if (!isPlaying && !gameOver) {
-        clock.getDelta();
-    }
+    } else if (!isPlaying && !gameOver) { clock.getDelta(); }
     renderer.render(scene, camera);
 }
 animate();
