@@ -71,6 +71,7 @@ const invisibleMat = new THREE.MeshBasicMaterial({ visible: false });
 // Floor & Ceiling
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), floorMat);
 floor.rotation.x = -Math.PI / 2;
+floor.position.y = 0;
 scene.add(floor);
 
 const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), wallMat);
@@ -96,7 +97,7 @@ const eWallRight = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.5), wallMat);
 eWallRight.position.set(5.25, 3, 3.25);
 eastWallGroup.add(eWallBottom, eWallTop, eWallLeft, eWallRight);
 scene.add(eastWallGroup);
-colliders.push(eWallBottom, eWallLeft, eWallRight); // Top wall too high to hit
+colliders.push(eWallBottom, eWallLeft, eWallRight);
 
 // Window Glass
 const windowGlass = new THREE.Mesh(
@@ -129,10 +130,16 @@ scene.add(door);
 interactables.push(door);
 colliders.push(door);
 
-// Outside West Door Hallway (so you don't fall in the void)
+// Doorway Threshold (Fixes void hole under main door)
+const mainDoorThreshold = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 3), floorMat);
+mainDoorThreshold.rotation.x = -Math.PI / 2;
+mainDoorThreshold.position.set(-5.25, 0, 0);
+scene.add(mainDoorThreshold);
+
+// Outside West Door Hallway 
 const hallFloor = new THREE.Mesh(new THREE.PlaneGeometry(4, 3), floorMat);
 hallFloor.rotation.x = -Math.PI / 2;
-hallFloor.position.set(-7.5, 0.01, 0);
+hallFloor.position.set(-7.5, 0, 0);
 scene.add(hallFloor);
 
 // Invisible blocker to keep player from walking forever out the door
@@ -156,19 +163,26 @@ northWallGroup.add(nWallLeft, nWallRight, nWallTop);
 scene.add(northWallGroup);
 colliders.push(nWallLeft, nWallRight);
 
-// Closet Door
-const closetDoor = new THREE.Mesh(new THREE.BoxGeometry(3, 4, 0.2), new THREE.MeshStandardMaterial({ color: 0x3d2314 }));
+// Closet Door (Now White)
+// Used an off-white color (0xf5f5f5) so it doesn't blend invisibly into the pure white walls
+const closetDoor = new THREE.Mesh(new THREE.BoxGeometry(3, 4, 0.2), new THREE.MeshStandardMaterial({ color: 0xf5f5f5 }));
 closetDoor.position.set(0, 2, -5.25);
 closetDoor.userData = { type: 'closet door' };
 scene.add(closetDoor);
 interactables.push(closetDoor);
 colliders.push(closetDoor);
 
+// Closet Door Threshold (Fixes void hole under closet door)
+const closetDoorThreshold = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.5), floorMat);
+closetDoorThreshold.rotation.x = -Math.PI / 2;
+closetDoorThreshold.position.set(0, 0, -5.25);
+scene.add(closetDoorThreshold);
+
 // Closet Interior
 const closetGroup = new THREE.Group();
 const cFloor = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), floorMat);
 cFloor.rotation.x = -Math.PI / 2;
-cFloor.position.set(0, 0.01, -7);
+cFloor.position.set(0, 0, -7);
 const cCeiling = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), wallMat);
 cCeiling.rotation.x = Math.PI / 2;
 cCeiling.position.set(0, 5.99, -7);
