@@ -1,12 +1,6 @@
 import * as THREE from 'https://unpkg.com/three@0.126.0/build/three.module.js';
 import { PointerLockControls } from 'https://unpkg.com/three@0.126.0/examples/jsm/controls/PointerLockControls.js';
 
-// ===== MINECRAFT-STYLE LOADING SCREEN =====
-const loaderDiv = document.createElement('div');
-loaderDiv.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;background:#050505;z-index:9999;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;font-family:'Courier New', monospace;";
-loaderDiv.innerHTML = `<h2>Generating World Chunks...</h2><div style="width:300px;height:20px;border:2px solid #555;"><div id="load-bar" style="width:0%;height:100%;background:#4a3018;transition: width 0.1s;"></div></div>`;
-document.body.appendChild(loaderDiv);
-
 // Game State
 let isPlaying = false;
 let gameOver = false;
@@ -29,12 +23,10 @@ const sixAmScreen = document.getElementById('six-am-screen');
 const menuText = document.querySelector('#main-menu p');
 if(menuText) menuText.innerText = "W,A,S,D to Move | Left Click to Interact | F or Right Click for Flashlight";
 
-// ===== SCENE & MINECRAFT PBR RENDERER =====
+// Scene Setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x020202);
-scene.fog = new THREE.Fog(0x020202, 5, 45); // Unloaded chunks fade to black smoothly
-
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 60); 
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 120); 
 
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" }); 
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -65,14 +57,7 @@ document.addEventListener('keyup', (e) => {
 });
 
 const interactables = [];
-const staticColliders = [];
-const dynamicColliders = []; 
-
-// Chunk Groups (Used to explicitly UNLOAD RAM/VRAM)
-const bedroomGroup = new THREE.Group(); scene.add(bedroomGroup);
-const closetGroup = new THREE.Group(); scene.add(closetGroup);
-const hallGroup = new THREE.Group(); scene.add(hallGroup);
-const outsideGroup = new THREE.Group(); scene.add(outsideGroup);
+const colliders = [];
 
 // ===== PROCEDURAL PBR TEXTURES =====
 function createTexture(type) {
@@ -108,6 +93,7 @@ const invisibleMat = new THREE.MeshBasicMaterial({ visible: false });
 // ===== CLOCK CANVAS TEXTURE =====
 const clockCanvas = document.createElement('canvas'); clockCanvas.width = 256; clockCanvas.height = 128; 
 const clockCtx = clockCanvas.getContext('2d'); const clockTex = new THREE.CanvasTexture(clockCanvas);
+
 function updateClockDisplay(timeStr) {
     clockCtx.fillStyle = '#050505'; clockCtx.fillRect(0,0,256,128);
     clockCtx.fillStyle = '#ff0000'; clockCtx.font = 'bold 50px Courier New'; 
@@ -116,109 +102,113 @@ function updateClockDisplay(timeStr) {
 }
 updateClockDisplay("12:00 AM");
 
-// ===== BUILD ROOM (ADDED TO BEDROOM GROUP) =====
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), woodMat); floor.rotation.x = -Math.PI / 2; floor.position.y = 0; bedroomGroup.add(floor);
-const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), wallMat); ceiling.rotation.x = Math.PI / 2; ceiling.position.y = 6; bedroomGroup.add(ceiling);
-const sWall = new THREE.Mesh(new THREE.BoxGeometry(10, 6, 0.5), wallMat); sWall.position.set(0, 3, 5.25); bedroomGroup.add(sWall); staticColliders.push(sWall);
+// ===== BUILD ROOM =====
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), woodMat); floor.rotation.x = -Math.PI / 2; floor.position.y = 0; scene.add(floor);
+const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), wallMat); ceiling.rotation.x = Math.PI / 2; ceiling.position.y = 6; scene.add(ceiling);
+const sWall = new THREE.Mesh(new THREE.BoxGeometry(10, 6, 0.5), wallMat); sWall.position.set(0, 3, 5.25); scene.add(sWall); colliders.push(sWall);
 
 const eastWallGroup = new THREE.Group();
 const eWallBottom = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2, 3), wallMat); eWallBottom.position.set(5.25, 1, 0);
 const eWallTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2, 3), wallMat); eWallTop.position.set(5.25, 5, 0);
 const eWallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.5), wallMat); eWallLeft.position.set(5.25, 3, -3.25);
 const eWallRight = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.5), wallMat); eWallRight.position.set(5.25, 3, 3.25);
-eastWallGroup.add(eWallBottom, eWallTop, eWallLeft, eWallRight); bedroomGroup.add(eastWallGroup); staticColliders.push(eWallBottom, eWallLeft, eWallRight);
+eastWallGroup.add(eWallBottom, eWallTop, eWallLeft, eWallRight); scene.add(eastWallGroup); colliders.push(eWallBottom, eWallLeft, eWallRight);
 
 const windowGlass = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2, 3), new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.3 }));
-windowGlass.position.set(5.25, 3, 0); windowGlass.userData = { type: 'window' }; bedroomGroup.add(windowGlass); interactables.push(windowGlass); staticColliders.push(windowGlass);
+windowGlass.position.set(5.25, 3, 0); windowGlass.userData = { type: 'window' }; scene.add(windowGlass); interactables.push(windowGlass); colliders.push(windowGlass);
 
 const westWallGroup = new THREE.Group();
 const wWallTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.8, 3.4), wallMat); wWallTop.position.set(-5.25, 5.1, 0);
 const wWallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.3), wallMat); wWallLeft.position.set(-5.25, 3, -3.35);
 const wWallRight = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.3), wallMat); wWallRight.position.set(-5.25, 3, 3.35);
-westWallGroup.add(wWallTop, wWallLeft, wWallRight); bedroomGroup.add(westWallGroup); staticColliders.push(wWallLeft, wWallRight);
+westWallGroup.add(wWallTop, wWallLeft, wWallRight); scene.add(westWallGroup); colliders.push(wWallLeft, wWallRight);
 
 const northWallGroup = new THREE.Group();
 const nWallLeft = new THREE.Mesh(new THREE.BoxGeometry(1.5, 6, 0.5), wallMat); nWallLeft.position.set(-4.5, 3, -5.25);
 const nWallRight = new THREE.Mesh(new THREE.BoxGeometry(5.5, 6, 0.5), wallMat); nWallRight.position.set(2.5, 3, -5.25);
 const nWallTop = new THREE.Mesh(new THREE.BoxGeometry(3.5, 1.8, 0.5), wallMat); nWallTop.position.set(-2.0, 5.1, -5.25);
-northWallGroup.add(nWallLeft, nWallRight, nWallTop); bedroomGroup.add(northWallGroup); staticColliders.push(nWallLeft, nWallRight);
+northWallGroup.add(nWallLeft, nWallRight, nWallTop); scene.add(northWallGroup); colliders.push(nWallLeft, nWallRight);
 
-const buildFrame = (x, y, z, rotY, group) => {
+const buildFrame = (x, y, z, rotY) => {
     const frame = new THREE.Group();
     const tFrame = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.2, 3.4), perfectWhiteWoodMat); tFrame.position.set(0, 2.1, 0);
     const lFrame = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4, 0.2), perfectWhiteWoodMat); lFrame.position.set(0, 0, -1.6);
     const rFrame = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4, 0.2), perfectWhiteWoodMat); rFrame.position.set(0, 0, 1.6);
-    frame.add(tFrame, lFrame, rFrame); frame.position.set(x, y, z); frame.rotation.y = rotY; group.add(frame);
+    frame.add(tFrame, lFrame, rFrame); frame.position.set(x, y, z); frame.rotation.y = rotY; scene.add(frame);
 }
-buildFrame(-5.25, 2, 0, 0, bedroomGroup); buildFrame(-2.0, 2, -5.25, Math.PI/2, bedroomGroup); 
+buildFrame(-5.25, 2, 0, 0); buildFrame(-2.0, 2, -5.25, Math.PI/2); 
 
 // ===== DOORS & HINGES =====
-const mainDoorHinge = new THREE.Group(); mainDoorHinge.position.set(-5.25, 2, -1.5); scene.add(mainDoorHinge); // Attached to root scene to span zones
+const mainDoorHinge = new THREE.Group(); mainDoorHinge.position.set(-5.25, 2, -1.5); scene.add(mainDoorHinge);
 const mainDoor = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 3), woodMat);
 const mKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); mKnob1.position.set(0.15, 0, 1.2); mKnob1.userData = { noShadow: true };
 const mKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); mKnob2.position.set(-0.15, 0, 1.2); mKnob2.userData = { noShadow: true };
 mainDoor.add(mKnob1, mKnob2); mainDoor.position.set(0, 0, 1.5); mainDoor.userData = { type: 'main door' };
-mainDoorHinge.add(mainDoor); interactables.push(mainDoor); dynamicColliders.push(mainDoor);
+mainDoorHinge.add(mainDoor); interactables.push(mainDoor); colliders.push(mainDoor);
 
-const closetDoorHinge = new THREE.Group(); closetDoorHinge.position.set(-3.5, 2, -5.25); scene.add(closetDoorHinge); // Root scene
+const closetDoorHinge = new THREE.Group(); closetDoorHinge.position.set(-3.5, 2, -5.25); scene.add(closetDoorHinge);
 const closetDoor = new THREE.Mesh(new THREE.BoxGeometry(3, 4, 0.2), perfectWhiteWoodMat);
 const cKnob1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob1.position.set(1.2, 0, 0.15); cKnob1.userData = { noShadow: true };
 const cKnob2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); cKnob2.position.set(1.2, 0, -0.15); cKnob2.userData = { noShadow: true };
 closetDoor.add(cKnob1, cKnob2); closetDoor.position.set(1.5, 0, 0); closetDoor.userData = { type: 'closet door' };
-closetDoorHinge.add(closetDoor); interactables.push(closetDoor); dynamicColliders.push(closetDoor);
+closetDoorHinge.add(closetDoor); interactables.push(closetDoor); colliders.push(closetDoor);
 
-const mainDoorThreshold = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 3), woodMat); mainDoorThreshold.rotation.x = -Math.PI / 2; mainDoorThreshold.position.set(-5.25, 0.01, 0); bedroomGroup.add(mainDoorThreshold);
-const closetDoorThreshold = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.5), woodMat); closetDoorThreshold.rotation.x = -Math.PI / 2; closetDoorThreshold.position.set(-2.0, 0.01, -5.25); bedroomGroup.add(closetDoorThreshold);
+const mainDoorThreshold = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 3), woodMat); mainDoorThreshold.rotation.x = -Math.PI / 2; mainDoorThreshold.position.set(-5.25, 0.01, 0); scene.add(mainDoorThreshold);
+const closetDoorThreshold = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.5), woodMat); closetDoorThreshold.rotation.x = -Math.PI / 2; closetDoorThreshold.position.set(-2.0, 0.01, -5.25); scene.add(closetDoorThreshold);
 
-// ===== EXTENDED HALLWAY (ADDED TO HALL GROUP) =====
-const hallFloor = new THREE.Mesh(new THREE.PlaneGeometry(4, 37), woodMat); hallFloor.rotation.x = -Math.PI / 2; hallFloor.position.set(-7.5, 0.01, 11.5);
-const hallCeil = new THREE.Mesh(new THREE.PlaneGeometry(4, 37), wallMat); hallCeil.rotation.x = Math.PI / 2; hallCeil.position.set(-7.5, 5.99, 11.5);
+// ===== EXTENDED HALLWAY =====
+const hallFloor = new THREE.Mesh(new THREE.PlaneGeometry(4, 37), woodMat); hallFloor.rotation.x = -Math.PI / 2; hallFloor.position.set(-7.5, 0.01, 11.5); scene.add(hallFloor);
+const hallCeil = new THREE.Mesh(new THREE.PlaneGeometry(4, 37), wallMat); hallCeil.rotation.x = Math.PI / 2; hallCeil.position.set(-7.5, 5.99, 11.5); scene.add(hallCeil);
 
-const hallWallEastNorth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 2), wallMat); hallWallEastNorth.position.set(-5.25, 3, -6); 
-const hallWallEastSeg1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 9.3), wallMat); hallWallEastSeg1.position.set(-5.25, 3, 9.65); 
-const hallWallEastSeg2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 12.3), wallMat); hallWallEastSeg2.position.set(-5.25, 3, 23.85); 
-const hallWallEastTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.8, 3.4), wallMat); hallWallEastTop.position.set(-5.25, 5.1, 16); 
+const hallWallEastNorth = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 2), wallMat); hallWallEastNorth.position.set(-5.25, 3, -6); scene.add(hallWallEastNorth);
+const hallWallEastSeg1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 9.3), wallMat); hallWallEastSeg1.position.set(-5.25, 3, 9.65); scene.add(hallWallEastSeg1);
+const hallWallEastSeg2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 12.3), wallMat); hallWallEastSeg2.position.set(-5.25, 3, 23.85); scene.add(hallWallEastSeg2);
+const hallWallEastTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.8, 3.4), wallMat); hallWallEastTop.position.set(-5.25, 5.1, 16); scene.add(hallWallEastTop);
 
-const hallWallWestSeg1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 13.3), wallMat); hallWallWestSeg1.position.set(-9.75, 3, -0.35); 
-const hallWallWestSeg2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 10.3), wallMat); hallWallWestSeg2.position.set(-9.75, 3, 14.85); 
-const hallWallWestSeg3 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 6), wallMat); hallWallWestSeg3.position.set(-9.75, 3, 27); 
+const hallWallWestSeg1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 13.3), wallMat); hallWallWestSeg1.position.set(-9.75, 3, -0.35); scene.add(hallWallWestSeg1);
+const hallWallWestSeg2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 10.3), wallMat); hallWallWestSeg2.position.set(-9.75, 3, 14.85); scene.add(hallWallWestSeg2);
+const hallWallWestSeg3 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 6), wallMat); hallWallWestSeg3.position.set(-9.75, 3, 27); scene.add(hallWallWestSeg3);
 
-const hallWallWestTop1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.8, 3.4), wallMat); hallWallWestTop1.position.set(-9.75, 5.1, 8); 
-const hallWallWestTop2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, 4), wallMat); hallWallWestTop2.position.set(-9.75, 5.5, 22); 
+const hallWallWestTop1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.8, 3.4), wallMat); hallWallWestTop1.position.set(-9.75, 5.1, 8); scene.add(hallWallWestTop1);
+const hallWallWestTop2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, 4), wallMat); hallWallWestTop2.position.set(-9.75, 5.5, 22); scene.add(hallWallWestTop2);
 
-const hallWallSouth = new THREE.Mesh(new THREE.BoxGeometry(5, 6, 0.5), wallMat); hallWallSouth.position.set(-7.5, 3, 30);
-const hallWallNorth = new THREE.Mesh(new THREE.BoxGeometry(5, 6, 0.5), wallMat); hallWallNorth.position.set(-7.5, 3, -7);
+const hallWallSouth = new THREE.Mesh(new THREE.BoxGeometry(5, 6, 0.5), wallMat); hallWallSouth.position.set(-7.5, 3, 30); scene.add(hallWallSouth);
+const hallWallNorth = new THREE.Mesh(new THREE.BoxGeometry(5, 6, 0.5), wallMat); hallWallNorth.position.set(-7.5, 3, -7); scene.add(hallWallNorth);
 
-hallGroup.add(hallFloor, hallCeil, hallWallEastNorth, hallWallEastSeg1, hallWallEastSeg2, hallWallEastTop, hallWallWestSeg1, hallWallWestSeg2, hallWallWestSeg3, hallWallWestTop1, hallWallWestTop2, hallWallSouth, hallWallNorth); 
-staticColliders.push(hallWallEastNorth, hallWallEastSeg1, hallWallEastSeg2, hallWallWestSeg1, hallWallWestSeg2, hallWallWestSeg3, hallWallSouth, hallWallNorth);
+colliders.push(hallWallEastNorth, hallWallEastSeg1, hallWallEastSeg2, hallWallWestSeg1, hallWallWestSeg2, hallWallWestSeg3, hallWallSouth, hallWallNorth);
 
-const fGeo = new THREE.BoxGeometry(0.2, 4, 3); const fKnob = new THREE.SphereGeometry(0.08);
+// Fake Doors Factory
 const createFakeDoor = () => {
-    const fDoor = new THREE.Mesh(fGeo, woodMat);
-    const k1 = new THREE.Mesh(fKnob, metalMat); k1.position.set(0.15, 0, 1.2); k1.userData={noShadow:true};
-    const k2 = new THREE.Mesh(fKnob, metalMat); k2.position.set(-0.15, 0, 1.2); k2.userData={noShadow:true};
+    const fDoor = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 3), woodMat);
+    const k1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); k1.position.set(0.15, 0, 1.2); k1.userData={noShadow:true};
+    const k2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), metalMat); k2.position.set(-0.15, 0, 1.2); k2.userData={noShadow:true};
     fDoor.add(k1, k2); return fDoor;
 };
-buildFrame(-9.75, 2, 8, 0, hallGroup); const fakeDoor1 = createFakeDoor(); fakeDoor1.position.set(-9.75, 2, 8); hallGroup.add(fakeDoor1); staticColliders.push(fakeDoor1);
-buildFrame(-5.25, 2, 16, 0, hallGroup); const fakeDoor2 = createFakeDoor(); fakeDoor2.position.set(-5.25, 2, 16); hallGroup.add(fakeDoor2); staticColliders.push(fakeDoor2);
 
-const lrEntrance = new THREE.Mesh(new THREE.BoxGeometry(0.1, 5, 4), invisibleMat); lrEntrance.position.set(-9.75, 2.5, 22); hallGroup.add(lrEntrance);
-const lrVoid = new THREE.Mesh(new THREE.BoxGeometry(2, 6, 4.5), darkMat); lrVoid.position.set(-11, 3, 22); hallGroup.add(lrVoid);
-const hallBarrier = new THREE.Mesh(new THREE.BoxGeometry(4, 10, 0.5), invisibleMat); hallBarrier.position.set(-7.5, 5, 1.5); scene.add(hallBarrier); staticColliders.push(hallBarrier);
+// Fake Door 1 (West Wall)
+buildFrame(-9.75, 2, 8, 0); 
+const fakeDoor1 = createFakeDoor(); fakeDoor1.position.set(-9.75, 2, 8); 
+scene.add(fakeDoor1); colliders.push(fakeDoor1);
 
-// ===== CLOSET INTERIOR (ADDED TO CLOSET GROUP) =====
-const cFloor = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), woodMat); cFloor.rotation.x = -Math.PI / 2; cFloor.position.set(-2.0, 0, -7);
-const cCeiling = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), wallMat); cCeiling.rotation.x = Math.PI / 2; cCeiling.position.set(-2.0, 5.99, -7);
-const cBack = new THREE.Mesh(new THREE.BoxGeometry(3, 6, 0.5), wallMat); cBack.position.set(-2.0, 3, -8.75);
-const cLeft = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.0), wallMat); cLeft.position.set(-3.75, 3, -7);
-const cRight = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.0), wallMat); cRight.position.set(-0.25, 3, -7);
-closetGroup.add(cFloor, cCeiling, cBack, cLeft, cRight); staticColliders.push(cBack, cLeft, cRight);
+// Fake Door 2 (East Wall)
+buildFrame(-5.25, 2, 16, 0); 
+const fakeDoor2 = createFakeDoor(); fakeDoor2.position.set(-5.25, 2, 16); 
+scene.add(fakeDoor2); colliders.push(fakeDoor2);
 
-const shelf = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.1, 1.5), woodMat); shelf.position.set(-2.0, 5.0, -8.0); closetGroup.add(shelf);
-const clothesRod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 3.4), metalMat); clothesRod.rotation.z = Math.PI / 2; clothesRod.position.set(-2.0, 4.7, -7.5); closetGroup.add(clothesRod);
+// Living Room Void
+const lrEntrance = new THREE.Mesh(new THREE.BoxGeometry(0.1, 5, 4), invisibleMat); lrEntrance.position.set(-9.75, 2.5, 22); scene.add(lrEntrance);
+const lrVoid = new THREE.Mesh(new THREE.BoxGeometry(2, 6, 4.5), darkMat); lrVoid.position.set(-11, 3, 22); scene.add(lrVoid);
+const hallBarrier = new THREE.Mesh(new THREE.BoxGeometry(4, 10, 0.5), invisibleMat); hallBarrier.position.set(-7.5, 5, 1.5); scene.add(hallBarrier); colliders.push(hallBarrier);
 
-const hookGeo = new THREE.TorusGeometry(0.06, 0.01, 8, 16, Math.PI); const hBaseGeo = new THREE.BoxGeometry(0.02, 0.02, 0.4);
-const shirtGeo = new THREE.BoxGeometry(0.12, 1.0, 0.45); const pantsGeo = new THREE.BoxGeometry(0.1, 0.8, 0.35);
+// ===== CLOSET INTERIOR =====
+const cFloor = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), woodMat); cFloor.rotation.x = -Math.PI / 2; cFloor.position.set(-2.0, 0, -7); scene.add(cFloor);
+const cCeiling = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), wallMat); cCeiling.rotation.x = Math.PI / 2; cCeiling.position.set(-2.0, 5.99, -7); scene.add(cCeiling);
+const cBack = new THREE.Mesh(new THREE.BoxGeometry(3, 6, 0.5), wallMat); cBack.position.set(-2.0, 3, -8.75); scene.add(cBack); colliders.push(cBack);
+const cLeft = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.0), wallMat); cLeft.position.set(-3.75, 3, -7); scene.add(cLeft); colliders.push(cLeft);
+const cRight = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 3.0), wallMat); cRight.position.set(-0.25, 3, -7); scene.add(cRight); colliders.push(cRight);
+
+const shelf = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.1, 1.5), woodMat); shelf.position.set(-2.0, 5.0, -8.0); scene.add(shelf);
+const clothesRod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 3.4), metalMat); clothesRod.rotation.z = Math.PI / 2; clothesRod.position.set(-2.0, 4.7, -7.5); scene.add(clothesRod);
 
 const clothesData = [
     { type: 'shirt', color: 0x882222 }, { type: 'pants', color: 0x224488 }, { type: 'shirt', color: 0x228822 }, 
@@ -228,66 +218,71 @@ const clothesData = [
 
 for(let i=0; i<9; i++) {
     const itemGroup = new THREE.Group(); itemGroup.position.set(-3.4 + (i*0.35), 4.7, -7.5); itemGroup.rotation.y = (Math.random() - 0.5) * 0.15; 
-    const hook = new THREE.Mesh(hookGeo, metalMat); hook.position.set(0, -0.05, 0); hook.rotation.z = Math.PI; hook.rotation.y = Math.PI / 2; hook.userData = { noShadow: true };
-    const hangerBase = new THREE.Mesh(hBaseGeo, metalMat); hangerBase.position.set(0, -0.15, 0); hangerBase.userData = { noShadow: true };
-    let clothing = new THREE.Mesh(clothesData[i].type === 'shirt' ? shirtGeo : pantsGeo, new THREE.MeshStandardMaterial({color: clothesData[i].color, roughness: 0.9}));
+    const hook = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.01, 8, 16, Math.PI), metalMat); hook.position.set(0, -0.05, 0); hook.rotation.z = Math.PI; hook.rotation.y = Math.PI / 2; hook.userData = { noShadow: true };
+    const hangerBase = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.4), metalMat); hangerBase.position.set(0, -0.15, 0); hangerBase.userData = { noShadow: true };
+    let clothing = new THREE.Mesh(new THREE.BoxGeometry(0.12, clothesData[i].type === 'shirt' ? 1.0 : 0.8, clothesData[i].type === 'shirt' ? 0.45 : 0.35), new THREE.MeshStandardMaterial({color: clothesData[i].color, roughness: 0.9}));
     clothing.position.set(0, clothesData[i].type === 'shirt' ? -0.65 : -0.55, 0); 
-    itemGroup.add(hook, hangerBase, clothing); closetGroup.add(itemGroup);
+    itemGroup.add(hook, hangerBase, clothing); scene.add(itemGroup);
 }
 
-// ===== FURNITURE (BEDROOM GROUP) =====
-const bed = new THREE.Group();
+// ===== FURNITURE =====
+const bedGroup = new THREE.Group();
 const headboard = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.0, 0.2), woodMat); headboard.position.set(3.5, 1.0, 4.9);
 const footboard = new THREE.Mesh(new THREE.BoxGeometry(3.0, 1.0, 0.2), woodMat); footboard.position.set(3.5, 0.5, 0.1);
 const rightRail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.6, 4.6), woodMat); rightRail.position.set(4.9, 0.5, 2.5);
 const leftRail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.6, 4.6), woodMat); leftRail.position.set(2.1, 0.5, 2.5);
-bed.add(headboard, footboard, rightRail, leftRail);
+bedGroup.add(headboard, footboard, rightRail, leftRail);
 
-const legGeo = new THREE.CylinderGeometry(0.08, 0.04, 0.4);
-[ [2.2, 0.2, 4.8], [4.8, 0.2, 4.8], [2.2, 0.2, 0.2], [4.8, 0.2, 0.2] ].forEach(pos => { const leg = new THREE.Mesh(legGeo, woodMat); leg.position.set(...pos); bed.add(leg); });
-const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.5, 4.6), fabricMat); mattress.position.set(3.5, 0.65, 2.5); bed.add(mattress);
-const pillow = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.MeshStandardMaterial({ color: 0xffffff })); pillow.scale.set(1.1, 0.2, 0.4); pillow.position.set(3.5, 0.95, 4.2); bed.add(pillow);
-bedroomGroup.add(bed);
-const bedCollider = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.0, 5.0), invisibleMat); bedCollider.position.set(3.5, 1.0, 2.5); bedroomGroup.add(bedCollider); staticColliders.push(bedCollider);
+[ [2.2, 0.2, 4.8], [4.8, 0.2, 4.8], [2.2, 0.2, 0.2], [4.8, 0.2, 0.2] ].forEach(pos => { 
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.04, 0.4), woodMat); leg.position.set(...pos); bedGroup.add(leg); 
+});
 
-const drawerGeom = new THREE.BoxGeometry(1.8, 0.7, 0.1);
-const dresser1 = new THREE.Group(); dresser1.position.set(1, 1.25, 4.5); 
-const dresserBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), woodMat); dresser1.add(dresserBody);
+const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.5, 4.6), fabricMat); mattress.position.set(3.5, 0.65, 2.5); bedGroup.add(mattress);
+const pillow = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.MeshStandardMaterial({ color: 0xffffff })); pillow.scale.set(1.1, 0.2, 0.4); pillow.position.set(3.5, 0.95, 4.2); bedGroup.add(pillow);
+
+scene.add(bedGroup);
+const bedCollider = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.0, 5.0), invisibleMat); bedCollider.position.set(3.5, 1.0, 2.5); scene.add(bedCollider); colliders.push(bedCollider);
+
+// Dresser 1
+const dresserGroup = new THREE.Group(); dresserGroup.position.set(1, 1.25, 4.5); 
+const dresserBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), woodMat); dresserGroup.add(dresserBody);
 for(let i=0; i<3; i++) {
-    const drawer = new THREE.Mesh(drawerGeom, woodMat); drawer.position.set(0, 0.7 - (i*0.8), -0.55); 
-    const drawerKnob = new THREE.Mesh(fKnob, metalMat); drawerKnob.position.set(0, 0, -0.05); drawerKnob.userData = { noShadow: true };
-    drawer.add(drawerKnob); dresser1.add(drawer);
+    const drawer = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.7, 0.1), woodMat); drawer.position.set(0, 0.7 - (i*0.8), -0.55); 
+    const drawerKnob = new THREE.Mesh(new THREE.SphereGeometry(0.06), metalMat); drawerKnob.position.set(0, 0, -0.05); drawerKnob.userData = { noShadow: true };
+    drawer.add(drawerKnob); dresserGroup.add(drawer);
 }
-bedroomGroup.add(dresser1); staticColliders.push(dresserBody);
+scene.add(dresserGroup); colliders.push(dresserBody);
 
-const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.5), metalMat); lampBase.position.set(0.4, 2.75, 4.7); bedroomGroup.add(lampBase);
-const lampShade = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.6), new THREE.MeshStandardMaterial({ color: 0xffffee, roughness: 0.8 })); lampShade.position.set(0.4, 3.2, 4.7); bedroomGroup.add(lampShade);
+const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.5), metalMat); lampBase.position.set(0.4, 2.75, 4.7); scene.add(lampBase);
+const lampShade = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.6), new THREE.MeshStandardMaterial({ color: 0xffffee, roughness: 0.8 })); lampShade.position.set(0.4, 3.2, 4.7); scene.add(lampShade);
 
+// Alarm Clock
 const clockGroup = new THREE.Group(); clockGroup.position.set(1.6, 2.6, 4.5); clockGroup.rotation.y = -0.15; 
-const clockBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 0.4), darkMat); clockGroup.add(clockBase);
-const screenMat = new THREE.MeshBasicMaterial({map: clockTex});
-const clockFace = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.32, 0.05), [darkMat, darkMat, darkMat, darkMat, darkMat, screenMat]);
+const clockBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 0.4), new THREE.MeshStandardMaterial({color: 0x1a1a1a})); clockGroup.add(clockBase);
+const clockFace = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.32, 0.05), [darkMat, darkMat, darkMat, darkMat, darkMat, new THREE.MeshBasicMaterial({map: clockTex})]);
 clockFace.position.set(0, 0.05, -0.22); clockFace.rotation.x = 0.3; clockGroup.add(clockFace);
 const snoozeBtn = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.04, 0.15), metalMat); snoozeBtn.position.set(0, 0.2, 0); clockGroup.add(snoozeBtn);
-bedroomGroup.add(clockGroup);
+scene.add(clockGroup);
 
+// Dresser 2 & TV
 const tvDresserGroup = new THREE.Group(); tvDresserGroup.position.set(2.5, 1.25, -4.5); 
 const tvDresserBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), woodMat); tvDresserGroup.add(tvDresserBody);
 for(let i=0; i<3; i++) {
-    const drawer = new THREE.Mesh(drawerGeom, woodMat); drawer.position.set(0, 0.7 - (i*0.8), 0.55); 
-    const drawerKnob = new THREE.Mesh(fKnob, metalMat); drawerKnob.position.set(0, 0, 0.05); drawerKnob.userData = { noShadow: true };
+    const drawer = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.7, 0.1), woodMat); drawer.position.set(0, 0.7 - (i*0.8), 0.55); 
+    const drawerKnob = new THREE.Mesh(new THREE.SphereGeometry(0.06), metalMat); drawerKnob.position.set(0, 0, 0.05); drawerKnob.userData = { noShadow: true };
     drawer.add(drawerKnob); tvDresserGroup.add(drawer);
 }
-bedroomGroup.add(tvDresserGroup); staticColliders.push(tvDresserBody);
+scene.add(tvDresserGroup); colliders.push(tvDresserBody);
 
 const tvGroup = new THREE.Group(); tvGroup.position.set(2.5, 2.5, -4.6);
 const tvBase = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.05, 0.4), darkMat); tvBase.position.set(0, 0.025, 0);
 const tvStand = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.2), darkMat); tvStand.position.set(0, 0.15, 0);
 const tvMonitor = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 0.1), darkMat); tvMonitor.position.set(0, 0.7, 0);
 const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 0.02), new THREE.MeshStandardMaterial({color: 0x050508})); tvScreen.position.set(0, 0.7, 0.05); 
-tvGroup.add(tvBase, tvStand, tvMonitor, tvScreen); bedroomGroup.add(tvGroup);
+tvGroup.add(tvBase, tvStand, tvMonitor, tvScreen); scene.add(tvGroup);
 
-// ===== OUTSIDE (ADDED TO OUTSIDE GROUP) =====
+// ===== OUTSIDE & STARS =====
+const outsideGroup = new THREE.Group();
 const yard = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x0a1c0a })); 
 yard.rotation.x = -Math.PI / 2; yard.position.set(15, -0.1, 20); outsideGroup.add(yard);
 
@@ -301,64 +296,42 @@ outsideGroup.add(instancedFence);
 const starsGeom = new THREE.BufferGeometry();
 const starsCount = 400; const starPosArr = new Float32Array(starsCount * 3);
 for(let i=0; i < starsCount; i++) {
-    // Generate stars relative to the outside space
     const radius = 40 + Math.random() * 2; const theta = Math.random() * Math.PI; const phi = Math.random() * Math.PI * 2; 
-    starPosArr[i*3] = 15 + radius * Math.sin(theta) * Math.cos(phi); starPosArr[i*3+1] = Math.abs(radius * Math.sin(theta) * Math.sin(phi)) + 5; starPosArr[i*3+2] = radius * Math.cos(theta);
+    starPosArr[i*3] = radius * Math.sin(theta) * Math.cos(phi); starPosArr[i*3+1] = Math.abs(radius * Math.sin(theta) * Math.sin(phi)) + 5; starPosArr[i*3+2] = radius * Math.cos(theta);
 }
 starsGeom.setAttribute('position', new THREE.BufferAttribute(starPosArr, 3));
-outsideGroup.add(new THREE.Points(starsGeom, new THREE.PointsMaterial({ size: 0.15, color: 0xffffff, fog: false })));
+outsideGroup.add(new THREE.Points(starsGeom, new THREE.PointsMaterial({ size: 0.15, color: 0xffffff })));
+scene.add(outsideGroup);
 
-// ===== LIGHTING =====
-// 1. DIRECTIONAL MOONLIGHT (Highly Optimized Shadows)
-const moonLight = new THREE.DirectionalLight(0x224488, 0.3); 
-moonLight.position.set(20, 10, -5); 
-moonLight.target.position.set(5, 0, 0); 
-moonLight.castShadow = true;
-moonLight.shadow.camera.left = -15; moonLight.shadow.camera.right = 15;
-moonLight.shadow.camera.top = 15; moonLight.shadow.camera.bottom = -15;
-moonLight.shadow.mapSize.width = 1024; moonLight.shadow.mapSize.height = 1024;
-outsideGroup.add(moonLight); outsideGroup.add(moonLight.target);
+// ===== LIGHTING & PLAYER FLASHLIGHT =====
+const moonLight = new THREE.DirectionalLight(0x224488, 0.3); moonLight.position.set(20, 10, -5); moonLight.target.position.set(5, 0, 0); scene.add(moonLight); scene.add(moonLight.target);
 
-// 2. POINT LIGHTS (Shadows Disabled for Extreme FPS)
-const lampLight = new THREE.PointLight(0xffaa55, 0.8, 12); 
+const lampLight = new THREE.PointLight(0xffaa55, 0.8, 9); 
 lampLight.position.set(0.4, 3.5, 4.7); 
-lampLight.castShadow = false; 
-bedroomGroup.add(lampLight);
+lampLight.castShadow = true;
+lampLight.shadow.mapSize.width = 512; lampLight.shadow.mapSize.height = 512;
+lampLight.shadow.bias = -0.001; lampLight.shadow.normalBias = 0.05; 
+scene.add(lampLight);
 
-const closetLight = new THREE.PointLight(0x444455, 0.5, 5); 
+const closetLight = new THREE.PointLight(0x444455, 0.5, 4); 
 closetLight.position.set(-2.0, 5, -7); 
-closetLight.castShadow = false;
-closetGroup.add(closetLight);
+scene.add(closetLight);
 
-// 3. FLASHLIGHT (Dynamic attached to camera)
 const flashlight = new THREE.SpotLight(0xfff5e6, 1.2, 40, Math.PI / 5, 0.8, 2);
 flashlight.position.set(0, 0, 0);
 flashlight.target.position.set(0, 0, -1); 
 flashlight.castShadow = true;
-flashlight.shadow.mapSize.width = 512; flashlight.shadow.mapSize.height = 512;
-flashlight.shadow.bias = -0.001; 
+flashlight.shadow.mapSize.width = 512;
+flashlight.shadow.mapSize.height = 512;
+flashlight.shadow.bias = -0.0005; 
+flashlight.shadow.normalBias = 0.02; 
 flashlight.visible = flashlightOn;
+
 camera.add(flashlight);
 camera.add(flashlight.target);
 
-// ===== PRE-COMPILATION LOADER (FIXES STARTUP LAG) =====
-let loadProgress = 0;
-const loadInt = setInterval(() => {
-    loadProgress += 10;
-    const bar = document.getElementById('load-bar');
-    if(bar) bar.style.width = loadProgress + '%';
-    if (loadProgress >= 100) {
-        clearInterval(loadInt);
-        renderer.compile(scene, camera); 
-        loaderDiv.style.display = 'none';
-    }
-}, 50);
-
-// APPLY SHADOWS & FREEZE MATRICES
+// APPLY SHADOWS
 scene.traverse((child) => {
-    // Enable Frustum Culling
-    child.frustumCulled = true;
-
     if (child.isMesh && child.material !== invisibleMat && child.material !== darkMat && child !== instancedFence) {
         if (child.userData.noShadow) {
             child.castShadow = false; child.receiveShadow = false;
@@ -367,18 +340,8 @@ scene.traverse((child) => {
         } else { 
             child.castShadow = true; child.receiveShadow = true; 
         }
-        
-        // UNLOADS STATIC MATH (Freezes meshes in memory)
-        if (!dynamicColliders.includes(child) && child.userData.type !== 'main door' && child.userData.type !== 'closet door') {
-            child.matrixAutoUpdate = false;
-            child.updateMatrix();
-        }
     }
 });
-
-const staticColliderBoxes = [];
-scene.updateMatrixWorld(true);
-staticColliders.forEach(c => staticColliderBoxes.push(new THREE.Box3().setFromObject(c)));
 
 // ===== INTERACTION LOGIC =====
 const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2(0, 0); 
@@ -409,7 +372,6 @@ window.addEventListener('resize', () => { camera.aspect = window.innerWidth / wi
 const clock = new THREE.Clock(); const moveSpeed = 6.0;
 
 const playerBox = new THREE.Box3();
-const dynamicBox = new THREE.Box3();
 const pSize = new THREE.Vector3(0.8, 3, 0.8);
 const pCenter = new THREE.Vector3();
 
@@ -439,29 +401,6 @@ function animate() {
             if (newTimeString !== lastTimeString) { lastTimeString = newTimeString; updateClockDisplay(lastTimeString); }
         }
 
-        // ===== EXPLICIT CHUNK UNLOADING (RAM/VRAM OPTIMIZATION) =====
-        // Disables math and rendering pipeline entirely for invisible zones
-        if (frameCount % 10 === 0) {
-            const inBedroom = camera.position.x > -5.25;
-            const inHallway = camera.position.x <= -5.25;
-
-            // Unload Hallway
-            hallGroup.visible = !(!doorOpen && inBedroom);
-            
-            // Unload Bedroom & Outside
-            if (!doorOpen && inHallway) {
-                bedroomGroup.visible = false;
-                outsideGroup.visible = false;
-            } else {
-                bedroomGroup.visible = true;
-                // Only load outside if near window
-                outsideGroup.visible = camera.position.x > -6;
-            }
-
-            // Unload Closet
-            closetGroup.visible = closetDoorOpen || camera.position.z < -4.5;
-        }
-
         // THROTTLED RAYCASTING
         if (frameCount % 4 === 0) {
             raycaster.setFromCamera(mouse, camera);
@@ -481,8 +420,9 @@ function animate() {
         const checkCollision = () => {
             pCenter.set(camera.position.x, 1.5, camera.position.z);
             playerBox.setFromCenterAndSize(pCenter, pSize);
-            for(let i=0; i < staticColliderBoxes.length; i++) { if(playerBox.intersectsBox(staticColliderBoxes[i])) return true; }
-            for(let i=0; i < dynamicColliders.length; i++) { dynamicBox.setFromObject(dynamicColliders[i]); if(playerBox.intersectsBox(dynamicBox)) return true; }
+            for(let i=0; i < colliders.length; i++) { 
+                if(playerBox.intersectsBox(new THREE.Box3().setFromObject(colliders[i]))) return true; 
+            }
             return false;
         };
 
